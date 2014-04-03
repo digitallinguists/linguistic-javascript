@@ -1,0 +1,38 @@
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <script type="text/javascript" src="js/edit.js"></script>
+<style>
+#db{display:none;}
+td.alm{
+  width:50px;
+  padding-left:10px;
+  padding-right:10px;
+  font-weight:bold;
+  text-align:center;
+  background-color:gray;
+  color:white;
+  border: 1px solid white;
+}
+td.gap{
+  background-color:black;
+}
+td.match{
+  background-color:gray;
+}
+td.mismatch{
+  color:white;
+  background-color:red;
+}
+</style>
+
+  </head>
+  <body>  
+  <h3>Alignment Demo in JavaScript</h3>
+  <input type="text" id="stringA" onkeyup="editDist();"/>
+  <input type="text" id="stringB" onkeyup="editDist();"/>
+
+  <div id="output"></div>
+  <div id="db"></div>
+  </body>
+</head>

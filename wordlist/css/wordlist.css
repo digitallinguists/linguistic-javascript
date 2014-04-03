@@ -1,0 +1,78 @@
+#qlc_table th{
+  text-align: left;
+  background-color:gray;
+  color: white;
+  border: solid 1px lightgray;
+  max-width: 250px;
+  overflow: auto;
+  padding: 5px;
+}
+#qlc_table td{
+  text-align: left;
+  background-color: white;
+  color: black;
+  border: solid 1px lightgray;
+  max-width: 250px;
+  overflow: auto;
+  padding: 5px;
+}
+#qlc_table table{
+  border: solid 2px black;
+}
+
+.inactive {
+  display: none;
+}
+.active {
+  display: inline;
+}
+
+.submit {
+  border: 1px solid black;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-right: 5px;
+  padding-left: 5px;
+  cursor: default;
+}
+.submit2 {
+  border: 1px solid black;
+  padding-top: 3px;
+  padding-bottom: 4px;
+  padding-right: 3px;
+  padding-left: 3px;
+}
+
+.info {
+  padding-top: 4px;
+  padding-bottom: 6px;
+  padding-right: 5px;
+  padding-left: 5px;
+  background-color: #fdfdfd;
+  font-weight: bold;
+  border: 1px solid black;
+}
+
+.textfield {
+  cursor: text;
+}
+
+.settings{
+  float:right;
+  background-color: #fefefe;
+  padding: 10px;
+}
+.settings th{
+  border: 1px solid lightgray;
+  text-align:left;
+  padding:5px;
+}
+.settings td{
+  border: 1px solid lightgray;
+  text-align:left;
+  padding:5px;
+}
+
+.settings table{
+  border: 1px solid lightgray;
+}

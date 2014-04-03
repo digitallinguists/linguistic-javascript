@@ -1,0 +1,61 @@
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+    <link href="css/no-theme/jquery-ui-1.10.4.custom.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/wordlist.css" media="screen">
+	  <script src="js/jquery-1.10.2.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+	  <script src="js/jquery-ui-1.10.4.custom.js"></script>
+    <script type="text/javascript" src="https://raw.githubusercontent.com/eligrey/FileSaver.js/master/FileSaver.js"></script>
+    <script type="text/javascript" src="js/wordlist.js"></script>
+  </head>
+  <body>
+    <h3>Wordlist Viewer</h3>
+    <input type="file" id="file" name="file" accept=".qlc" class="submit2 active" />
+    
+    <input id="view" type="button" onclick="showWLS(1);" class="submit inactive" value="&nbsp;VIEW&nbsp;" />
+    <div id="settings" class="settings inactive">
+      <table>
+        <tr>
+          <th colspan="2">
+            Settings
+          </th>
+        </tr>
+        <tr>
+          <th>Preview</th>
+          <td>
+            <input id="preview10"  type="button"  class="submit"  onclick="CFG['preview'] =  10; showWLS(1);" value="&nbsp;10&nbsp;" />
+            <input id="preview20"  type="button"  class="submit"  onclick="CFG['preview'] =  20; showWLS(1);" value="&nbsp;20&nbsp;" />
+            <input id="preview50"  type="button"  class="submit"  onclick="CFG['preview'] =  50; showWLS(1);" value="&nbsp;50&nbsp;" />
+            <input id="preview100" type="button"  class="submit"  onclick="CFG['preview'] = 100; showWLS(1);" value="&nbsp;100&nbsp;" />
+            <input id="preview100" type="button"  class="submit"  onclick="CFG['preview'] = 200; showWLS(1);" value="&nbsp;200&nbsp;" />
+            <input id="preview100" type="button"  class="submit"  onclick="CFG['preview'] = 500; showWLS(1);" value="&nbsp;500&nbsp;" />
+          </td>
+        </tr>
+      </table>
+    </div>
+    <br><br>
+    <input type="text" class="textfield inactive" onkeyup="filterWLS(event,'taxa');" id="taxa" placeholder="filter languages" />
+    <input type="text" class="textfield inactive" onkeyup="filterWLS(event,'concepts');" id="concepts" placeholder="filter concepts" />
+    <input type="text" class="textfield inactive" onkeyup="filterWLS(event,'columns');" id="columns" placeholder="filter columns" />
+    <input type="text" class="textfield inactive" onkeyup="addColumn(event);" id="add_column" placeholder="add column" />
+ 
+    <br><br>
+    <span class="info inactive" id="current"></span>
+    <input id="previous" type="button" class="submit inactive" value="&nbsp;PREVIOUS&nbsp;"/>
+    <input id="next" type="button" class="submit inactive" value="&nbsp;NEXT&nbsp;" />
+
+
+
+
+    <br><br>
+    <div id="db"></div>
+    <div id="qlc" ></div>
+    <div id="store"></div>
+
+    <script type="text/javascript">
+      document.getElementById('file').addEventListener('change', handleFileSelect, false);
+    </script>
+  </body>
+</head>

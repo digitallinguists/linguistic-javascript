@@ -1,0 +1,156 @@
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+    <script type="text/javascript" src="https://raw.githubusercontent.com/eligrey/FileSaver.js/master/FileSaver.js"></script>
+    <script type="text/javascript" src="js/undomanager.js"></script>
+    <script type="text/javascript" src="js/msa_data.js"></script>
+    <script type="text/javascript" src="js/msa_viewer.js"></script>
+    <script type="text/javascript" src="js/mousetrap.js"></script>
+  </head>
+  <body>
+  <style>
+    #msa {
+      background-color: white;
+    }
+    #store {
+      display: none;
+    }
+    .residue {
+      display: table-cell;
+      width: 50px;
+      background-color: #f1f1f1;
+      font-weight: bold;
+      text-align: center;
+      color: white;
+      cursor: pointer;
+    }
+    .residue_show {
+      display: table-cell;
+      width: 50px;
+      background-color: #f1f1f1;
+      font-weight: bold;
+      text-align: center;
+      color: white;
+    }
+    .new_gap {
+      display: table-cell;
+      width: 50px;
+      background-color: #f1f1f1;
+      font-weight: bold;
+      text-align: center;
+      color: white;
+      cursor: move;
+    }
+
+    td.active {
+      border: 2px solid red;
+    }
+    
+    .active {
+      background-color: LightBlue;
+      cursor: pointer;
+      display: inline;
+    }
+
+    .inactive {
+      background-color: LightGray;
+      cursor: default;
+      display: none;
+    }
+
+    .taxon {
+      display: table-cell;
+      font-weight: bold;
+      text-align: left;
+      background-color: white;
+    }
+    .header {
+      font-weight: bold;
+      text-align: left;
+      background-color: LightBlue;
+    }
+    .submit {
+      border: 1px solid black;
+      padding-top: 5px;
+      padding-bottom: 5px;
+      padding-right: 5px;
+      padding-left: 5px;
+    }
+    .submit2 {
+      border: 1px solid black;
+      padding-top: 2px;
+      padding-bottom: 2px;
+      padding-right: 2px;
+      padding-left: 2px;
+    }
+    .annotation {
+      background-color: LightGray;
+      text-align: center;
+      color: DarkGray;
+    }
+    .annotation_type {
+      background-color: LightGray;
+      text-align: left;
+      color:DarkGray;
+    }
+    #source {
+      background-color: LightGray;
+      width: 600px;
+      height: 300px;
+    }
+  
+
+    td.dolgo_ERROR{background-color: white; color:red;}
+    td.dolgo_V{background-color: #c86464;}
+    td.dolgo_K{background-color: #c89664;} 
+    td.dolgo_P{background-color: #c8c864;} 
+    td.dolgo_H{background-color: #96c864;} 
+    td.dolgo_J{background-color: #64c864;} 
+    td.dolgo_M{background-color: #64c896;} 
+    td.dolgo_N{background-color: #64c8c8;} 
+    td.dolgo_S{background-color: #6496c8;} 
+    td.dolgo_R{background-color: #6464c8;} 
+    td.dolgo_T{background-color: #9664c8;} 
+    td.dolgo_W{background-color: #c864c8;} 
+    td.dolgo_1{background-color: #c86496;} 
+    td.dolgo_X{background-color: #bbbbbb;}
+    td.dolgo_GAP{background-color: #bbbbbb;}
+  </style>
+  <h3>MSA Viewer</h3>
+  <!--<label for="file" id="Selector">Browse an MSA file: </label>-->
+  <input type="file" id="file" name="file" accept=".msa" onclick="initialize();" class="submit2 active" />
+  <input id="view" type="button" onclick="showMSA(false);" class="submit inactive" value="&nbsp;VIEW&nbsp;" />
+  <input id='edit' type="button" onclick="showMSA(true);" class="submit inactive" value="&nbsp;EDIT&nbsp;" />
+  <input id="refresh" type="button" onclick="normalizeMSA();" class="submit inactive" value="&nbsp;REFRESH&nbsp;" />
+  <input id="save" type="button" onclick="exportFile();" class="submit inactive" value="&nbsp;SAVE&nbsp;" />
+  <input id="undo_button" type="button" onclick="undoManager.undo();" class="submit inactive" value="&nbsp;UNDO&nbsp;" />
+  <input id="redo_button" type="button" onclick="undoManager.redo();" class="submit inactive" value="&nbsp;REDO&nbsp;" />
+
+  
+  <!--<input id="edit" type="button" onclick="showSource();" class="submit" value="EDIT" />-->
+  <br><br>
+  <!--<select id="msafiles">
+  </select>-->
+  <div id="msa" ></div>
+  <div id="store"></div>
+  
+<script type="text/javascript">
+document.getElementById('file').addEventListener('change', handleFileSelect, false);
+var undoManager = new UndoManager();  
+
+/* define key bindings */
+Mousetrap.bind('shift+v',function(){showMSA(false);});
+Mousetrap.bind('shift+e',function(){showMSA(true);});
+Mousetrap.bind('shift+r',function(){normalizeMSA();});
+Mousetrap.bind('shift+s',function(){exportFile();});
+Mousetrap.bind('shift+left',function(){undoManager.undo();});
+Mousetrap.bind('shift+right',function(){undoManager.redo();});
+
+//Mousetrap.bind('keyleft',function(){updateManager.undo();});
+//Mousetrap.bind('keyright',function(){updateManager.redo();});
+
+</script>
+  <div id="db"></div>
+  </body>
+</head>
