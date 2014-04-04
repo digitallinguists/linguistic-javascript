@@ -97,6 +97,7 @@ function csvToArrays(allText, separator, comment) {
     WLS['parsed'] = true;
     WLS['rows'] = selection;
     WLS['columns'] = columns;
+    WLS['filename'] = CFG['filename'];
  }
 
 function showWLS(start)
@@ -201,7 +202,7 @@ function showWLS(start)
   {
     following = WLS['rows'].length;
   }
-  current.innerHTML = "Showing entries "+start + ' - '+following +' of '+parseInt(WLS['rows'].length);
+  current.innerHTML = "Showing "+start + ' - '+following +' of '+parseInt(WLS['rows'].length) + " entries";
   current.className = current.className.replace(/inactive/,'active');
 
   var modify = ['taxa','concepts','columns','add_column'];
@@ -210,11 +211,21 @@ function showWLS(start)
     tmp = document.getElementById(modify[i]);
     tmp.className = view.className.replace(/inactive/,'active');
   }
+
+
   $("#view").removeClass('active');
   $("#view").addClass("inactive");
 
   $("#settings").removeClass('inactive')
   $("#settings").addClass('active');  
+  $("#save").removeClass('inactive')
+  $("#save").addClass('active');  
+  $("#refresh").removeClass('inactive')
+  $("#refresh").addClass('active');  
+
+  var fn = document.getElementById('filename');
+  fn.innerHTML = '&lt;'+CFG['filename']+'&gt;';
+
 }
 
 function addColumn(event)
@@ -618,11 +629,20 @@ function filterColumns(event)
 /* file-handler function from http://www.html5rocks.com/de/tutorials/file/dndfiles/ */
 function handleFileSelect(evt) 
 {
+  //var db = document.getElementById('db');
+  //try
+  //{
+  //  db.innerHTML = localStorage.wls;}
+  //catch(e)
+  //{   db.innerHTML = e
+  //}
+  
   var files = evt.target.files; /* FileList object */
-
   var file = files[0];
   var store = document.getElementById('store');
-  
+  CFG['filename'] = file.name;
+  localStorage.filename = file.name;
+
   /* create file reader instance */
   var reader = new FileReader();
   //$.get('harry.msa', function(data){document.getElementById('store').innerText = data}, alert("loaded text"), 'text');
@@ -635,12 +655,70 @@ function handleFileSelect(evt)
     tmp = document.getElementById(modify[i]);
     tmp.className = view.className.replace(/inactive/,'active');
   }
-  var modify = ["concepts","columns","taxa","add_column","previous","next","current"];
+  var modify = ["concepts","columns","taxa","add_column","previous","next","current",'store','save'];
   for(i in modify)
   {
     $("#"+modify[i]).removeClass("active");
     $("#"+modify[i]).addClass("inactive");
   }
   document.getElementById("qlc").innerHTML = '';
+
+  var fn = document.getElementById('filename');
+  fn.innerHTML = '&lt;'+CFG['filename']+'&gt;';
+  
 }
 
+function refreshFile()
+{
+  var store = document.getElementById('store');
+  var text = "# WORDLIST\n";
+  text += "@modified: "+getDate()+'\n#\n';
+  text += "ID\t"+WLS['header'].join('\t')+'\n';
+  for(concept in WLS['concepts'])
+  {
+    text += '#\n';
+    for(i in WLS['concepts'][concept])
+    {
+      var idx = WLS['concepts'][concept][i];
+
+      if(!isNaN(idx))
+      {
+        text += idx+'\t'+WLS[idx].join('\t')+'\n';
+      }
+    }
+  }
+  store.innerText = text;
+  WLS['edited'] = true;
+  localStorage.text = text;
+  localStorage.filename = CFG['filename'];
+}
+function saveFile()
+{
+  /* disallow safing when document was not edited */
+  if(WLS['edited'] == false){return}
+  
+  var store = document.getElementById('store');
+  var blob = new Blob([store.innerText], {type: "text/plain;charset=utf-8"});
+  saveAs(blob, CFG['filename']);  
+}
+
+function getDate()
+{
+  var today = new Date();
+  var dd = today.getDate();
+  var mm = today.getMonth()+1; //January is 0!
+  var yyyy = today.getFullYear();
+  var hh = today.getHours();
+  var mins = today.getMinutes();
+  
+  if(dd<10) {
+      dd='0'+dd
+  } 
+  
+  if(mm<10) {
+      mm='0'+mm
+  } 
+  
+  today = [yyyy,mm,dd].join('-')+' '+hh+':'+mins;
+  return today;
+}

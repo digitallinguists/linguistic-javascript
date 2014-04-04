@@ -5,16 +5,18 @@
     <link href="css/no-theme/jquery-ui-1.10.4.custom.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="css/wordlist.css" media="screen">
 	  <script src="js/jquery-1.10.2.js"></script>
-    <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
 	  <script src="js/jquery-ui-1.10.4.custom.js"></script>
     <script type="text/javascript" src="https://raw.githubusercontent.com/eligrey/FileSaver.js/master/FileSaver.js"></script>
     <script type="text/javascript" src="js/wordlist.js"></script>
   </head>
   <body>
-    <h3>Wordlist Viewer</h3>
+    <h3>Wordlist Viewer <span id="filename">...</span></h3>
     <input type="file" id="file" name="file" accept=".qlc" class="submit2 active" />
     
     <input id="view" type="button" onclick="showWLS(1);" class="submit inactive" value="&nbsp;VIEW&nbsp;" />
+    <input id="last" type="button" onclick="showWLS(1);$('#last').removeClass('active');$('#last').addClass('inactive');" class="submit inactive" value="&nbsp;LAST&nbsp;" />
+    <input id="refresh" type="button" onclick="refreshFile();" class="submit inactive" value="&nbsp;STORE&nbsp;" />
+    <input id="save" type="button" onclick="saveFile();" class="submit inactive" value="&nbsp;SAVE&nbsp;" />
     <div id="settings" class="settings inactive">
       <table>
         <tr>
@@ -56,6 +58,17 @@
 
     <script type="text/javascript">
       document.getElementById('file').addEventListener('change', handleFileSelect, false);
+      if(typeof localStorage.text == 'undefined'){}
+      else
+      {
+        document.getElementById('store').innerText = localStorage.text;
+        $("#last").removeClass("inactive");
+        $("#last").addClass("active");
+        var last = document.getElementById('last');
+        last.value = "VIEW "+"<"+localStorage.filename+">";
+        document.getElementById('filename').innerHTML = '<'+localStorage.filename+'>';
+        CFG['filename'] = localStorage.filename;
+      }
     </script>
   </body>
 </head>
