@@ -1,636 +1,774 @@
-if (window.File && window.FileReader && window.FileList && window.Blob) 
-{
-}
-else
-{
-  alert("The File APIs are not fully supported in this browser.");
+if (!(window.File && window.FileReader && window.FileList && window.Blob)) {
+    alert("The File APIs are not fully supported in this browser.");
 }
 
-var MSA = {};
-MSA['taxa'] = {};
-MSA['sequences'] = {};
-MSA['ans'] = {};
-MSA['width'] = 0;
-MSA["type"] = 'basic';
-MSA['taxlen'] = 0;
+var MSAFile = function() {
+    this.meta_information = {}; //lines of the form "@<key>:<value>"
+    this.dataset = undefined; //header entry
+    this.alignment = undefined; //header entry
+    this.rows = []; //alignments
+    this.ans = []; //special rows as defined through keywords
+    this.width = 0; //width of the alignment table without the taxon
+    this.unique_count = 0; //number of unique rows
+    this.type = 'basic'; //or 'with_id'
+    this.taxlen = 0; //max length of taxa
+    this.filename = undefined;
+    this.filecontent = undefined; //file content as read in
+    this.status = { parsed: false,
+                  edited: false,
+                  mode: 'show'}; // or 'edit'
+}
 
-var msa_status = {};
-msa_status['parsed'] = false;
-msa_status['edited'] = false;
-msa_status['mode'] = 'basic';
+var MSARow = function() {
+    this.id = undefined;
+    this.taxon = undefined;
+    this.alignment = [];
+    this.unique = true; //if unique === true then alignment contains valid data, else reference_idx indicates
+                        //another row with the same alignment
+    this.reference_idx = undefined;
+}
 
-function parseMSA()
-{
-  var store = document.getElementById('store');
-  var text = store.innerText;
-  var display = document.getElementById('msa');
-  
-  //var db = document.getElementById('db');
+var fileManager = (function () {
+    var MSAFiles = undefined;
+    var active_idx = -1; //-1 means no valid selection
 
-  var lines = text.split(/\r\n|\n/);
-
-  /* define a sequence index */
-  var sid = 1;
-
-  /* define array of unique sequences */
-  var uniques = [];
-  var unique_taxa = [];
-  var sequences = {};
-
-  for (var i = 0; i < lines.length; i++)
-  {
-    var start = lines[i].slice(0,1);
-
-    if (start == '#'){}
-    else if (start == ':'){} /* nothing for the moment */
-    else if (start == '@')
-    {
-      keyval = lines[i].split(':');
-      key = keyval[0].replace(/@/,'');
-      val = keyval[1].replace(/^\s*/,'').replace(/\s*$/,'');
-      MSA[key] = val;
-    }
-    else
-    {
-      taxalignments = lines[i].split('\t');
-      if (taxalignments[0].replace(/\./g,'') in keywords)
-      {
-	      MSA['ans'][taxalignments[0].replace(/\./g,'')] = taxalignments.slice(1,taxalignments.length);
-      }
-      else if (taxalignments.length == 1)
-      {
-	      if (i == 0)
-	      {
-	        MSA['dataset'] = lines[i];
-	      }
-	      else if (i == 1)
-	      {
-	        MSA['alignment'] = lines[i];
-	      }
-      }
-      else
-      {
-	      /* check if MSA is in the typical ID system */
-	      if(isNaN(taxalignments[0]))
-	      {
-          var alignment = taxalignments.slice(1,taxalignments.lenght);
-          var taxon = taxalignments[0].replace(/\./g,'')+'_'+sid;
-          
-          /* modify taxon length */
-          if(taxalignments[0].length > MSA['taxlen']){MSA['taxlen'] = taxalignments[0].length;}
-
-          var sequence = alignment.join('').replace(/-/g,'');
-
-          MSA['taxa'][taxon] = alignment;
-
-          if(alignment.length > MSA['width']){MSA['width'] = alignment.length;}
-
-          var idx = uniques.indexOf(sequence);
-          if(idx == -1)
-          {
-            var tmp_taxa = [taxon];
-            sequences[sequence] = tmp_taxa;
-            uniques.push(sequence);
-            unique_taxa.push(taxon);
-          }
-          else
-          {
-            sequences[sequence].push(taxon);
-          }
-          sid += 1;
-
-	      }
-	      else
-	      {
-          MSA["type"] = 'with_id';
-          
-	        if(taxalignments[0] == '0')
-	        {
-	          MSA['ans'][taxalignments[1].replace(/\./g,'')] = taxalignments.slice(2,taxalignments.length);
-	        }
-	        else
-	        {
-            var taxon = taxalignments[1].replace(/\./g,'')+'_'+taxalignments[0];
-            
-            /* modify taxon length */
-            if(taxalignments[1].length > MSA['taxlen']){MSA['taxlen'] = taxalignments[1].length;}
-
-            var alignment = taxalignments.slice(2,taxalignments.length);
-            var sequence = alignment.join('').replace(/-/g,'');
-            sid = taxalignments[0];
-
-            MSA['taxa'][taxon] = alignment;
-
-            var idx = uniques.indexOf(sequence);
-            if(idx == -1)
-            {
-              var tmp_taxa = [taxon];
-              sequences[sequence] = tmp_taxa;
-              uniques.push(sequence);
-              unique_taxa.push(taxon);
+    return {
+        handleFiles: function (fileHandles) { //user selected new set of files
+            //clear drop down list
+            var elem = document.getElementById('msa_select');
+            while (elem.firstChild) {
+                elem.removeChild(elem.firstChild);
             }
-            else
-            {
-              sequences[sequence].push(taxon);
+            var option = document.createElement('option');
+            option.value = -1;
+            option.innerHTML = "- Select a file to display -";
+            elem.appendChild(option);
+            MSAFiles = [];
+            //create an MSAFile for every selected file
+            for (var i = 0; i < fileHandles.length; i++) {
+                var handle = fileHandles[i];
+                var msa = new MSAFile();
+                msa.filename = handle.name;
+
+                //prepare callback for read completion
+                var reader = new FileReader();
+                reader.onload = function (msa_obj, index) {
+                    return function (event) {
+                        fileManager.fileLoaded(event, msa_obj, index);
+                    };
+                }(msa, i);
+                reader.readAsText(handle);
             }
+        },
 
-            if(alignment.length > MSA['width']){MSA['width'] = alignment.length;}
+        handleFileSelect: function (event) {
+            //user selects a msa file from drop down list
+            var selected_idx = parseInt(event.value);
+            if (selected_idx < 0) return; //dummy value selected
+            active_idx = selected_idx;
+            showMSA(MSAFiles[selected_idx], false);
+        },
+
+        showSelectedFile: function(unique){
+            showMSA(MSAFiles[active_idx], unique)
+        },
+
+        fileLoaded: function(event, msa_obj, index) {
+            msa_obj.filecontent = event.target.result;
+            MSAFiles[index] = msa_obj;
+            //add msa file to drop down list
+            var elem = document.getElementById('msa_select');
+            var option = document.createElement('option');
+            option.value = index;
+            option.innerHTML = msa_obj.filename;
+            elem.appendChild(option);
+            elem.style.display = 'inline';
+            document.getElementById('view').className = "submit active";
+            document.getElementById('edit').className = "submit active";
+            document.getElementById('save').className = "submit active";
+        },
+
+        saveFiles: function() {
+            if (MSAFiles === undefined) {
+                return;
+            }
+            var count = 0;
+            for (var i=0; i<MSAFiles.length; i++) {
+                if (MSAFiles[i].status.edited) {
+                    exportFile(MSAFiles[i]);
+                    count += 1;
+                }
+            }
+            if (count === 0) {
+                alert("No modified files found.");
+            }
+        },
+
+        activeFile: function() {
+           if (MSAFiles === undefined) {
+                return undefined;
+           }
+           return MSAFiles[active_idx]; 
+        }
+    };
+})();
+
+function parseMSA(msa_file) {
+    var text = msa_file.filecontent;
+    var lines = text.split(/\r\n|\n/);
+
+    for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        var start = line[0];
+        if (start === '#' || start === ':') {
+            continue;
+        }
+        if (start == '@') {
+            keyval = lines[i].split(':');
+            key = keyval[0].trim().slice(1);
+            val = keyval[1].trim();
+            msa_file.meta_information.key = val;
+        } else {
+            var parts = line.split('\t');
+            if (parts.length === 1) {
+                if (i === 0) {
+                    msa_file.dataset = line
+                } else if ( i === 1 ) {
+                    msa_file.alignment = line
+                }
+                continue;
+            }
+            var row = new MSARow();
+            if (! isNaN(parts[0])) { //id as first row entry
+                row.id = parseInt(parts.shift());
+                msa_file.type = 'with_id';
+            }
             
-	        }
-	      }
-      }
-    }
-  }
+            var row_header = parts[0].replace(/\.*$/, '')
+            row.taxon = row_header;
+            row.alignment = parts.slice(1).map(function(x){ return x.trim(); });
 
-  /* append uniques to MSA to make it global */
-  MSA['uniques'] = unique_taxa;
-  MSA['sequences'] = sequences;
-  msa_status['parsed'] = true;
+            if (row_header in keywords) {
+                msa_file.ans.push(row);
+                continue;
+            }
+            msa_file.rows.push(row);
+            msa_file.taxlen = Math.max(msa_file.taxlen, row_header.length);
+            msa_file.width = Math.max(msa_file.width, row.alignment.length);
+            
+        }
+    }
+
+    msa_file.rows.sort(function(a,b) { return a.taxon.localeCompare(b.taxon); })
+
+    //search duplicates
+    var seen = {};
+    for (var i = 0; i < msa_file.rows.length; i++) {
+        var row = msa_file.rows[i];
+        var word = row.alignment.join('').replace(/-/g, '');
+        if (word in seen) {
+            row.unique = false;
+	    row.alignment = undefined;
+            row.reference_idx = seen[word];
+        } else {
+            seen[word] = i;
+	    msa_file.unique_count++;
+        }
+    }
+    msa_file.status.parsed = true;
 }
 
-function showMSA(unique)
-{
-  /* parse MSA files */
-  if(msa_status['parsed'] == false) 
-  {
-    parseMSA();
-  }
+function GetDolgo(phon) {
+    var dolgo = "dolgo_ERROR";
+    if (phon in DOLGO) {
+        dolgo = "dolgo_" + DOLGO[phon]
+    } else if (phon.slice(0, 2) in DOLGO) {
+        dolgo = "dolgo_" + DOLGO[phon.slice(0, 2)];
+    } else if (phon.slice(0, 1) in DOLGO) {
+        dolgo = "dolgo_" + DOLGO[phon.slice(0, 1)];
+    } else if (phon.slice(1, 3) in DOLGO) {
+        dolgo = "dolgo_" + DOLGO[phon.slice(1, 3)];
+    } else if (phon.slice(1, 2) in DOLGO) {
+        dolgo = "dolgo_" + DOLGO[phon.slice(1, 2)];
+    } else if (phon == "-") {
+        dolgo = "dolgo_GAP";
+    }
+    return dolgo;
+}
 
-  var msa = document.getElementById('msa');
-  msa.innerHTML = '';
-  
-  var text = '<table id="msa_table">';
-  if ("dataset" in MSA)
-  {
-    text += '<tbody id="msa_head"><tr class="header"><th id="dataset" class="header" colspan="'+(MSA['width']+1)+'">DATASET: '+MSA['dataset']+"</th></tr>";
-  }
-  if ("alignment" in MSA)
-  {
-    text += '<tr class="header"><th id="alignment" class="header" colspan="'+(MSA['width']+1)+'">ALIGNMENT: '+MSA['alignment']+'</th></tr></tbody>';
-  }
-  //text += '<table id="msa">';
-  
-  if(unique)
-  {
-    var taxa = MSA['uniques'];
-    msa_status['mode'] = 'edit';
-    document.getElementById('refresh').className = "submit active";
-  }
-  else
-  {
-    var taxa = [];
-    for (key in MSA['taxa']){taxa.push(key)}
-    msa_status['mode'] = 'show';
-    var refresh = document.getElementById('refresh').className = "submit inactive";
-  }
-  
-  /* no clics for show-mode */
-  /* current solution is not nice in terms of modularity, it should be modified later on! */
-  if(unique)
-  {
-    /* append tbodies */
-    text += '<tbody id="msa_body">';
+//has to be called to propagate updates of the msa_file during edit to the DOM
+function syncMsaToDom(msa_file) {
+    if (msa_file.status.parsed == false) {
+        parseMSA(msa_file);
+    }
+
+    var rows;
+    if (msa_file.status.mode == 'edit') {
+        rows = msa_file.rows.filter(function(elem) { return elem.unique });
+    } else {
+        rows = msa_file.rows;
+    }
     
-    var idx = 1;
-
-    for (var i in taxa.sort())
-    {
-      var taxon = taxa[i].replace(/_[0-9]+$/,'');
-
-      text += '<tr id="'+taxa[i]+'" class="alm_row"><th class="taxon">'+taxon+'</th>';
-      var k = 1;
-      var gap = 0;
-      for (var j in MSA['taxa'][taxa[i]])
-      {
-        var phon = MSA['taxa'][taxa[i]][j];
-
-        /* now try to find the column */
-        var dolgo = "dolgo_ERROR";
-        if (phon in DOLGO){dolgo = "dolgo_"+DOLGO[phon]}
-        else if (phon.slice(0,2) in DOLGO){dolgo = "dolgo_"+DOLGO[phon.slice(0,2)];}
-        else if (phon.slice(0,1) in DOLGO){dolgo = "dolgo_"+DOLGO[phon.slice(0,1)];}
-        else if (phon.slice(1,3) in DOLGO){dolgo = "dolgo_"+DOLGO[phon.slice(1,3)];}
-        else if (phon.slice(1,2) in DOLGO){dolgo = "dolgo_"+DOLGO[phon.slice(1,2)];}
-        else if (phon == "-"){dolgo = "dolgo_GAP";}
-        
-        if(phon != '-')
-        {            
-	        text += '<td title="insert gap" id="'+taxa[i]+'_'+k+'" onclick="addGap('+"'"+taxa[i]+'_'+k+"'"+')" class="residue '+dolgo+'">'+phon+'</td>';
-	        k += 1;
-	        gap = 0;
-              }
-              else
-              {
-	        gap += 1;
-	        text += '<td title="delete gap" id="'+taxa[i]+'_'+k+'_gap" onclick="deleteGap('+"'"+taxa[i]+'_'+k+'_gap'+"'"+')" class="residue '+dolgo+'">'+phon+'</td>';
-        }
-      }
-      text += '<td id="'+taxa[i]+'_last'+'" class="new_gap" title="insert gap" onclick="addGap('+"'"+taxa[i]+'_last'+"'"+')"></tr>';
-    }
-    text += '</tbody>';
-  }
-  else
-  {
-    /* append tbodies */
-    text += '<tbody id="msa_body">';
-
-    for (var i in taxa.sort())
-    {
-      var taxon = taxa[i].replace(/_[0-9]+$/,'');
-
-      text += '<tr id="'+taxa[i]+'" class="alm_row"><th class="taxon">'+taxon+'</th>';
-      var k = 1;
-      var gap = 0;
-      for (var j in MSA['taxa'][taxa[i]])
-      {
-        var phon = MSA['taxa'][taxa[i]][j];
-
-        /* now try to find the column */
-        var dolgo = "dolgo_ERROR";
-        if (phon in DOLGO){dolgo = "dolgo_"+DOLGO[phon]}
-        else if (phon.slice(0,2) in DOLGO){dolgo = "dolgo_"+DOLGO[phon.slice(0,2)];}
-        else if (phon.slice(0,1) in DOLGO){dolgo = "dolgo_"+DOLGO[phon.slice(0,1)];}
-        else if (phon.slice(1,3) in DOLGO){dolgo = "dolgo_"+DOLGO[phon.slice(1,3)];}
-        else if (phon.slice(1,2) in DOLGO){dolgo = "dolgo_"+DOLGO[phon.slice(1,2)];}
-        else if (phon == "-"){dolgo = "dolgo_GAP";}
-        
-        if(phon != '-')
-        {
-	        text += '<td id="'+taxa[i]+'_'+k+'" class="residue_show '+dolgo+'">'+phon+'</td>';
-	        k += 1;
-	        gap = 0;
-              }
-              else
-              {
-	        gap += 1;
-	        text += '<td id="'+taxa[i]+'_'+k+'_gap"  class="residue_show '+dolgo+'">'+phon+'</td>';
-        }
-      }
-      text += '</tr>';
-    }
-    text += '</tbody>';
-  }
-
-  //if(MSA['ans'].length >= 1){
-  text += '<tbody id="msa_annotation"><tr><td colspan="'+(MSA['width']+1)+'"></td></tr>'; //}
-  
-  for (annotation in MSA['ans'])
-  {
-    text += '<tr class="annotation_row">';
-    text += '<td class="annotation_type">'+annotation+'</td>';
+    var tbody = document.getElementById('msa_body');
     
-    var ans = MSA['ans'][annotation];
-    for (var j in ans)
-    {
-      if(ans[j] != '.')
-      {
-	text += '<td class="annotation">'+MSA['ans'][annotation][j]+'</td>';
-      }
-      else
-      {
-	text += '<td class="annotation"></td>';
-      }
+    //sync row count
+    while(rows.length < tbody.children.length) {
+        var table_row = document.createElement('TR');
+        table_row.classList.add('alm_row')
+        body.appendChild(table_row);
     }
-    text += '</tr>';
-  }
-  //if(MSA['ans'].length >= 1){
-  text += '</tbody>'; //}
-
-  text += '</table>';
-
-  msa.innerHTML = text;
-
-  if(msa_status['mode'] == 'edit')
-  {
-    document.getElementById('msa_body').rows[0].childNodes[0].className += ' active';
-var active;
-$(document).keydown(function(e){
-    active = $('td.active').removeClass('active');
-    var x = active.index();
-    var y = active.closest('tr').index();
-    if (e.keyCode == 37) { 
-       x--;
-    }
-    if (e.keyCode == 38) {
-        y--;
-    }
-    if (e.keyCode == 39) { 
-        x++
-    }
-    if (e.keyCode == 40) {
-        y++
-    }
-    active = $('tr').eq(y).find('td').eq(x).addClass('active');
-});}
-}
-
-
-function initialize()
-{
-  msa_status['edited'] = false;
-  msa_status['parsed'] = false;
-  for(i in params)
-  {
-    document.getElementById(params[i]).className = "submit inactive";
-  }
-}
-
-/* file-handler function from http://www.html5rocks.com/de/tutorials/file/dndfiles/ */
-function handleFileSelect(evt) 
-{
-  var files = evt.target.files; /* FileList object */
-
-  var file = files[0];
-  var store = document.getElementById('store');
-  
-  /* clean inner text */
-  //store.innerText = '';
-
-  /* clean MSA reference */
-  for (key in MSA)
-  {
-    if (key != 'taxa' && key != 'ans')
-    {
-      MSA[key] = '';
-    }
-    else
-    {
-      MSA[key] = {};
-    }
-  }
-  MSA['filename'] = file.name;
-
-  /* create file reader instance */
-  var reader = new FileReader();
-  //$.get('harry.msa', function(data){document.getElementById('store').innerText = data}, alert("loaded text"), 'text');
-  reader.onload = function(e){store.innerText = reader.result;}
-  reader.readAsText(file);
-  
-  /* toggle activity of other buttons */
-  var view = document.getElementById('view').className = "submit active";
-  var view = document.getElementById('edit').className = "submit active";
-}
-
-
-/* idea from http://stackoverflow.com/questions/4492678/to-swap-rows-with-columns-of-matrix-in-javascript-or-jquery */
-function transpose(a) {
-    return Object.keys(a[0]).map(
-        function (c) { return a.map(function (r) { return r[c]; }); }
-        );
+    while(rows.length > tbody.children.length) {
+        tbody.removeChild(tbody.lastChild);
     }
 
-
-function normalizeMSA()
-{
-  /* disallow refreshing in show-mode */
-  if(msa_status['mode'] == 'show'){return}
-
-  /* get the table first */
-  var rows = document.getElementById('msa_body').rows;
-  
-  //var matrix = createArray(rows.length,rows[0].length);
-  //
-
-  /* get longest sequence in rows */
-  var maxlen = 0;
-  
-  for(i=0;i<rows.length;i++)
-  {
-    var len = rows[i].childNodes.length;
-
-    if(len > maxlen)
-    {
-      maxlen = len;
-    }
-  }
-  
-  /* iterate over rows and store gapped columns in a matrix */
-  var matrix = [];
-  for(var i=0;i<rows.length; i++)
-  {
-    var tmp = [];
-    for(var j=1;j<maxlen-1;j++)
-    {
-      if(typeof rows[i].childNodes[j] == 'undefined')
-      {
-        tmp.push(-1);
-      }
-      else
-      {
-        if(rows[i].childNodes[j].innerHTML == '-')
-        {
-          tmp.push(0);
+    //sync rows
+    var tab_index = 1;
+    for(var row_idx=0; row_idx < rows.length; row_idx++) {
+        var row = rows[row_idx]
+        var alignment;
+        var table_row = tbody.children[row_idx]
+        
+        if (row.unique) {
+            alignment = row.alignment;
+        } else {
+            alignment = msa_file.rows[row.reference_idx].alignment;
         }
-        else if(rows[i].childNodes[j].className.indexOf('residue') != -1)
-        {
-          tmp.push(1);
+        
+        //sync cell count
+        while(alignment.length+1 > table_row.children.length) {
+            var table_data = document.createElement('TD');
+	    table_data.classList.add('residue')
+	    table_data.appendChild(document.createTextNode(''));
+            table_row.appendChild(table_data);
         }
-        else
-        {
-          tmp.push(-1);
+        while(alignment.length+1 < table_row.children.length) {
+            table_row.removeChild(table_row.lastChild);
         }
-      }
+        
+        var textNode = table_row.children[0].childNodes[0];
+        if (textNode.nodeValue !== row.taxon) {
+            textNode.nodeValue = row.taxon;
+            table_row.children[0].classList = ['taxon'];
+        }
+        for (var col_idx = 0; col_idx < alignment.length; col_idx++) {
+            var cell = table_row.children[col_idx+1];
+	    cell.tabIndex = tab_index++;
+            textNode = cell.childNodes[0];
+            if (textNode.nodeValue !== alignment[col_idx]) {
+                textNode.nodeValue = alignment[col_idx];
+                //update dolgo css
+                cell.className = cell.className.replace(/(?:^|\s)dolgo_[^\s]*(?!\S)/g , '' );
+                cell.classList.add(GetDolgo(alignment[col_idx]));
+            }
+        }
     }
-    matrix.push(tmp);
-  }
-
-  /* transpose the matrix */
-  var tmatrix = transpose(matrix);
-
-  /* now iterate over tmatrix and identify 
-   * a) the cases of gapped columns, and
-   * b) the cases of undefined values (they should be gapped)
-   */
-  var db = document.getElementById('db');
-  db.innerHTML = '';
-  //for(i in tmatrix)
-  //{
-  //  db.innerHTML += tmatrix[i].join(' ')+'<br>';
-  //}
-
-  var gaps = [];
-  for(i in tmatrix) //var i=tmatrix.length-1;i>-1;i--)// in tmatrix)
-  {
-    for(j=tmatrix[0].length-1;j>-1;j--)
-    {
-      if(tmatrix[i][j] == -1)
-      {
-        var idx = rows[j].childNodes.length -1;
-        var sid = rows[j].childNodes[idx].id;
-        addGap(sid);
-        tmatrix[i][j] = 0;
-      }
-    }
-  }
-
-  for(i in tmatrix) 
-  {
-    if(tmatrix[i].reduce(function(p,c){return p+c;}) == 0)
-    {
-      gaps.push(i);
-    }
-  }
-  
-  /* reduce the gaps */
-  for(i=0;i<rows.length;i++)
-  {
-    for(j=gaps.length-1;j>-1;j--) //<gaps.length;j++)
-    {
-      var idx = parseInt(gaps[j]) + 1;
-      rows[i].deleteCell(idx);
-    }
-  }
-  
-  // append the date to MSA object
-  MSA['modified'] = getDate();
-
-  /* update the hidden button */
-  var store = document.getElementById('store');
-  store.innerText = '';
-  for(key in MSA)
-  {
-    if(key != 'taxa' && key != 'ans' && privates.indexOf(key) == -1)
-    {
-      store.innerText += '@'+key+': '+MSA[key]+'\n';
-    }
-  }
-
-  for(i=0;i<rows.length;i++)
-  {
-    var row = rows[i].childNodes;
-    var alm = [];
-    for(j=0;j<row.length-1;j++)
-    {
-      alm.push(row[j].innerHTML);
-    }
-
-    /* modify MSA['taxa'] */
-    var alignment = alm.slice(1,alm.length);
-    var sequence = alignment.join('').replace(/-/g,'');
-
-    //db.innerHTML += ' x '+sequence;
-    //db.innerHTML = 'MODE: '+MSA["type"];
-
-    for(j in MSA['sequences'][sequence])
-    {
-      var idx = MSA['sequences'][sequence][j];
-      MSA['taxa'][idx] = alignment;
-      
-      var seqid = idx.replace(/^.*_/,'');
-      var taxon = idx.replace(/_[0-9]+$/,'');
-
-      /* append data to store */
-      if(MSA["type"] == 'with_id')
-      {
-        store.innerText += seqid + '\t' + fillWithDots(taxon,MSA['taxlen']) + '\t' + alignment.join('\t') + '\n';
-      }
-      else
-      {
-        store.innerText += fillWithDots(taxon, MSA['taxlen']) + '\t' + alignment.join('\t')+'\n';
-      }
-    }
-  }
-
-  /* change MSA width */
-  MSA['width'] = alignment.length;
-  showMSA(true);
-  undoManager.clear();
-
-  /* toggle activity of other buttons */
-  document.getElementById('undo_button').className = "submit inactive";
-  document.getElementById('redo_button').className = "submit inactive";
-  document.getElementById('save').className = "submit active";
-
-  msa_status['edited'] = true;
-
 }
 
-function addGap(sid)
-{
-  var phon = document.getElementById(sid);
-  
-  /* get the parent node */
-  var tr = phon.parentNode;
+function showMSA(msa_file, edit_mode) {
+    /* parse MSA files */
+    if (msa_file.status.parsed == false) {
+        parseMSA(msa_file);  
+    }
 
-  /* insert new td element */
-  var new_cell = tr.insertCell(phon.cellIndex);
-  new_cell.className = "residue";
-  new_cell.className += " dolgo_Gap";
-  new_cell.innerHTML = "-";
-  new_cell.id = sid+'_gap';
-  new_cell.onclick = function(){deleteGap(sid+'_gap')};
-  new_cell.title = 'delete gap';
+    var msa_head = document.getElementById('msa_head');
+    var text = '';
+    if (msa_file.dataset !== undefined) {
+        text += '<tr class="header"><th id="dataset" class="header" colspan="' + (msa_file.width + 1) + '">DATASET: ' 
+            + msa_file.dataset + "</th></tr>";
+    }
+    if (msa_file.alignment !== undefined) {
+        text += '<tr class="header"><th id="alignment" class="header" colspan="' + (msa_file.width + 1) + '">ALIGNMENT: '
+            + msa_file.alignment + '</th></tr>';
+    }
+    if (text.length != 0) {
+        msa_head.innerHTML = text;
+    }
 
-  /* add stuff to undo-manager */
-  undoManager.add(
-      {
-        undo: function(){deleteGap(sid+'_gap');},
-        redo: function(){addGap(sid);}
-      });
+    var msa_body = document.getElementById('msa_body');
+    text = '';
+    var rows;
+    var css_class;
+    if (edit_mode) {
+        rows = msa_file.rows.filter(function(elem) { return elem.unique });
+        msa_file.status.mode = 'edit';
+        css_class = 'residue ';
+    } else {
+        rows = msa_file.rows;
+        msa_file.status.mode = 'show';
+        css_class = 'residue_show';
+    }
 
-  /* toggle activity of buttons */
-  document.getElementById('undo_button').className = "submit active";
-  document.getElementById('redo_button').className = "submit active";
+    var tabindex = 1;
+    for (var row_idx = 0; row_idx < rows.length; row_idx++) {
+        var row = rows[row_idx];
+        var alignment
+        if (row.unique) {
+            alignment = row.alignment
+        } else {
+            alignment = msa_file.rows[row.reference_idx].alignment;
+        }
+        text += '<tr class="alm_row"><td class="taxon">' + row.taxon + '</td>';
+        for (var col_idx = 0; col_idx < alignment.length; col_idx++) {
+            var cell = alignment[col_idx];
+            var dolgo = GetDolgo(cell);
+            var tab_definition;
+            if (edit_mode) {
+                tab_definition = '" tabindex=' + tabindex;
+            } else {
+                tab_definition = '';
+            }
+            text += '<td class="' + css_class +' ' + dolgo + tab_definition + '">' + cell + '</td>';
+            tabindex++;
+        }
+        text += '</tr>';
+    }
+    msa_body.innerHTML = text;
+
+    var msa_foot = document.getElementById('msa_annotation');
+    text = '<tr><td colspan="' + (msa_file.width + 1) + '"></td></tr>';
+
+    for (var row_idx=0; row_idx < msa_file.ans.length; row_idx++) {
+        var row = msa_file.ans[row_idx]
+        text += '<tr class="annotation_row">';
+        text += '<td class="annotation_type">' + row.taxon + '</td>';
+
+        for (var col_idx=0; col_idx < row.alignment.length; col_idx++) {
+            var cell = row.alignment[col_idx]
+            if (cell !== '.') {
+                text += '<td class="annotation">' + cell + '</td>';
+            } else {
+                text += '<td class="annotation"></td>';
+            }
+        }
+        text += '</tr>';
+    }
+    msa_foot.innerHTML = text;
+
+    $(document).off('keydown'); 
+    if (msa_file.status.mode === 'edit') {
+        $(document).keydown(tableSelection.keydownHandler);
+    }
+    document.getElementById('view').disabled = !edit_mode;
+    document.getElementById('edit').disabled = edit_mode;
 }
 
-function deleteGap(sid)
-{
-  var gap = document.getElementById(sid);
-  var tr = gap.parentNode;
-  tr.deleteCell(gap.cellIndex);
+tableSelection = (function () {
+    var ul = { //upper left corner
+        x: undefined,
+        y: undefined
+    }; 
+    var lr = { //lower right corner
+        x: undefined,
+        y: undefined
+    }; 
 
-  /* make undoable */
-  undoManager.add(
-      {
-        undo: function(){addGap(sid.replace(/_gap/,''));},
-        redo: function(){deleteGap(sid);}
-      });
-  /* toggle activity of buttons */
-  document.getElementById('undo_button').className = "submit active";
-  document.getElementById('redo_button').className = "submit active";
+    var selectionStart = {
+        x: undefined,
+        y: undefined
+    };
 
+    function getPositionInTable(node) {
+        if (node.tagName !== "TD") return undefined;
+        var result = { x:-1, y:-1};
+        result.x = Array.prototype.indexOf.call(node.parentNode.children, node)
+        node = node.parentNode;
+        result.y = Array.prototype.indexOf.call(node.parentNode.children, node)
+        return result;
+    }
+
+    function getCellInTable(x, y) {
+        var body = document.getElementById('msa_body');
+        return body.children[y].children[x];
+    }
+
+    function clearSelection() {
+        var x, y, node;
+
+        if (ul.x === undefined || ul.y === undefined ||
+            lr.x === undefined || lr.y === undefined) {
+            return;
+        }
+        for (y = ul.y; y <= lr.y; y++) {
+            node = getCellInTable(ul.x, y);
+            node.classList.remove('selected-left');
+            node = getCellInTable(lr.x, y);
+            node.classList.remove('selected-right');
+        }
+        for (x = ul.x; x<= lr.x; x++) {
+            node = getCellInTable(x,ul.y);
+            node.classList.remove('selected-top');
+            node = getCellInTable(x,lr.y);
+            node.classList.remove('selected-bottom');
+        }
+    }
+
+    function markSelection() {
+        var x, y, node;
+
+        if (ul.x === undefined || ul.y === undefined ||
+            lr.x === undefined || lr.y === undefined) {
+            return;
+        }
+        for (y = ul.y; y <= lr.y; y++) {
+            node = getCellInTable(ul.x, y);
+            node.classList.add('selected-left');
+            node = getCellInTable(lr.x, y);
+            node.classList.add('selected-right');
+        }
+        for (x = ul.x; x<= lr.x; x++) {
+            node = getCellInTable(x,ul.y);
+            node.classList.add('selected-top');
+            node = getCellInTable(x,lr.y);
+            node.classList.add('selected-bottom');
+        }
+    }
+
+    function startSelection(x,y) {
+        var node = getCellInTable(x,y);
+        if (node === undefined || x === 0) return;
+        clearSelection();
+        selectionStart.x = ul.x = lr.x = x;
+        selectionStart.y = ul.y = lr.y = y;
+        node.focus()
+    }
+
+    function extendSelection(x, y, nx, ny) {
+	if (ul.x === undefined || ul.y === undefined ||
+            lr.x === undefined || lr.y === undefined) {
+            startSelection(x, y);
+        }
+        var node = getCellInTable(nx,ny);
+        if (node === undefined || x === 0) return;
+        clearSelection();
+        ul.x = Math.min(selectionStart.x, nx);
+        ul.y = Math.min(selectionStart.y, ny);
+        lr.x = Math.max(selectionStart.x, nx);
+        lr.y = Math.max(selectionStart.y, ny);
+        markSelection();
+        node.focus();
+    }
+    
+    return {
+        keydownHandler: function keydownHandler(event) {
+            var active = document.activeElement;
+            if (active.tagName !== "TD")
+                return undefined;
+            var position = getPositionInTable(active);
+	    if (event.keyCode === 13) {
+		if (event.shiftKey) {
+		    if (event.ctrlKey || event.metaKey) {
+			splitSelectionAndFill('left');
+                    } else {
+			splitSelectionAndFill('right');
+                    }
+		} else if (event.ctrlKey || event.metaKey) {
+                    mergeSelectionAndFill('left');
+                } else {
+                    mergeSelectionAndFill('right');
+                }
+	    } else if (event.keyCode === 46 || event.keyCode === 8) { // DEL or Backspace
+                if (event.ctrlKey || event.metaKey) {
+                    deleteSelectionAndFill('left');
+                } else {
+                    deleteSelectionAndFill('right');
+                }
+            } else if ([37,39].indexOf(event.keyCode) !== -1 && (event.ctrlKey || event.metaKey)) {
+                if (event.keyCode === 37) {
+                    moveSelectionLeft();
+                } else {
+                    moveSelectionRight();
+                }
+            } else if ([37,38,39,40].indexOf(event.keyCode) != -1) { //arrow keys
+                var nx = position.x;
+                var ny = position.y;
+                if (event.keyCode == 37 ) {
+                    nx--;
+                }
+                else if (event.keyCode == 38) {
+                    ny--;
+                }
+                else if (event.keyCode == 39) {
+                    nx++
+                }
+                else if (event.keyCode == 40) {
+                    ny++
+                }
+                if (event.shiftKey) {
+                    extendSelection(position.x, position.y, nx,ny);
+                } else {
+                    startSelection(nx,ny);
+                }
+            }
+            return false;
+        },
+
+        getSelection: function getSelection() {
+            if (ul.x === undefined || ul.y === undefined ||
+                lr.x === undefined || lr.y === undefined) {
+                return undefined;
+            }
+           return {ul: {x: ul.x-1, y: ul.y}, lr: {x: lr.x-1, y: lr.y}}
+        },
+
+	moveSelection: function moveSelection(dx,dy) {
+	   if (ul.x === undefined || ul.y === undefined ||
+                lr.x === undefined || lr.y === undefined) {
+                return;
+            }
+	    var msa_file = fileManager.activeFile();
+	    if(msa_file === undefined || 
+	       0 > ul.x + dx || lr.x+dx > msa_file.width ||
+	       0 > ul.y + dy || lr.y+dy > msa_file.unique_count) {
+		return;
+	    }
+
+	    clearSelection();
+	    ul.x += dx;
+	    lr.x += dx;
+	    ul.y += dy;
+	    lr.y += dy;
+	    markSelection();
+
+	    var active = document.activeElement;
+            if (active.tagName !== "TD") {
+                return;
+	    }
+            var position = getPositionInTable(active);
+	    var cell = getCellInTable(position.x + dx, position.y + dy);
+	    if (cell !== undefined) {
+		cell.focus();
+	    }
+	}
+    };
+
+})();
+
+function splitString(s) {
+    var result = [];
+    for (var i in s) {
+	var code = s.charCodeAt(i);
+	i = s.charAt(i);
+	if (result.length > 0 &&
+	    ((code>=0xDC00 && code<0xE000) /*low surrogate*/
+	      || (code>=0x0300 && code<0x0370) /*combining mark*/))  {
+	    result[result.length-1] = result[result.length-1] + i;
+	} else {
+	    result.push(i);
+	}
+    }
+    return result;
 }
 
-
-// content is the data you'll write to file<br/>
-// filename is the filename<br/>
-// what I did is use iFrame as a buffer, fill it up with text
-function exportFile()
-{
-  /* disallow safing when document was not edited */
-  if(msa_status['edited'] == false){return}
-  
-  var store = document.getElementById('store');
-  var blob = new Blob([store.innerText], {type: "text/plain;charset=utf-8"});
-  saveAs(blob, MSA['filename']);  
- 
+function splitSelectionAndFill(filling_from) {
+    var msa_file = fileManager.activeFile();
+    var selection = tableSelection.getSelection();
+    if (msa_file === undefined || selection == undefined) return;
+    var rows = msa_file.rows.filter(function(elem) { return elem.unique });
+    for (var y = selection.ul.y; y <= selection.lr.y; y++) {
+	var splice_args = [selection.ul.x, selection.lr.x-selection.ul.x+1];
+	for (var x = selection.ul.x; x <= selection.lr.x; x++) {
+	    Array.prototype.push.apply(splice_args, splitString(rows[y].alignment[x]));
+	}
+	Array.prototype.splice.apply(rows[y].alignment, splice_args);
+    }
+    msa_file.status.edited = true;
+    normalizeMsa(msa_file, filling_from);
+    syncMsaToDom(msa_file);  
 }
 
-function getDate()
-{
-  var today = new Date();
-  var dd = today.getDate();
-  var mm = today.getMonth()+1; //January is 0!
-  var yyyy = today.getFullYear();
-  var hh = today.getHours();
-  var mins = today.getMinutes();
-  
-  if(dd<10) {
-      dd='0'+dd
-  } 
-  
-  if(mm<10) {
-      mm='0'+mm
-  } 
-  
-  today = [yyyy,mm,dd].join('-')+' '+hh+':'+mins;
-  return today;
+function mergeSelectionAndFill(filling_from) {
+    var msa_file = fileManager.activeFile();
+    var selection = tableSelection.getSelection();
+    if (msa_file === undefined || selection == undefined) return;
+    var rows = msa_file.rows.filter(function(elem) { return elem.unique });
+    for (var y = selection.ul.y; y <= selection.lr.y; y++) {
+	var repl = ''
+	for (var x = selection.ul.x; x <= selection.lr.x; x++) {
+	    if (rows[y].alignment[x] != '-' && rows[y].alignment[x] != '?') {
+		repl += rows[y].alignment[x];
+	    }
+	}
+	if (repl === '') repl = '-';
+	rows[y].alignment.splice(selection.ul.x, selection.lr.x-selection.ul.x+1, repl)
+    }
+    msa_file.status.edited = true;
+    normalizeMsa(msa_file, filling_from);
+    syncMsaToDom(msa_file);
+}
+
+function deleteSelectionAndFill(filling_from) {
+    var msa_file = fileManager.activeFile();
+    var selection = tableSelection.getSelection();
+    if (msa_file === undefined || selection == undefined) return;
+    var rows = msa_file.rows.filter(function(elem) { return elem.unique });
+    var count = selection.lr.x-selection.ul.x+1;
+    for (var y=selection.ul.y; y<=selection.lr.y; y++) {
+        rows[y].alignment.splice(selection.ul.x, count);
+    }
+
+    msa_file.status.edited = true;
+    normalizeMsa(msa_file, filling_from);
+    syncMsaToDom(msa_file);
+}
+
+function moveSelectionLeft() {
+    var msa_file = fileManager.activeFile();
+    var selection = tableSelection.getSelection();
+    if (msa_file === undefined || selection == undefined) return;
+    var rows = msa_file.rows.filter(function(elem) { return elem.unique });
+
+    for(run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
+	    rows[run_y].alignment.splice(selection.lr.x + 1, 0, '-');
+    }
+
+    var found_empty_row = false;
+    column_loop:
+    for (var run_x = selection.ul.x - 1; run_x >= 0; run_x--) {
+        for (var run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
+            if (rows[run_y].alignment[run_x] !== '-') {
+                continue column_loop;
+            }
+        }
+        found_empty_row = true;
+        break;
+    }
+    if (found_empty_row) {
+        for(run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
+            rows[run_y].alignment.splice(run_x, 1);
+        }
+	tableSelection.moveSelection(-1,0);
+    } else {
+	normalizeMsa(msa_file, 'left');
+    }
+    msa_file.status.edited = true;
+    syncMsaToDom(msa_file);
+}
+
+function moveSelectionRight() {
+    var msa_file = fileManager.activeFile();
+    var selection = tableSelection.getSelection();
+    if (msa_file === undefined || selection == undefined) return;
+    var rows = msa_file.rows.filter(function(elem) { return elem.unique });
+
+    for(run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
+	rows[run_y].alignment.splice(selection.ul.x, 0, '-');
+    }
+
+    var found_empty_row = false;
+    column_loop:
+    for (var run_x = selection.lr.x+1; run_x < msa_file.width + 1; run_x++) {
+        for (var run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
+            if (rows[run_y].alignment[run_x] !== '-') {
+                continue column_loop;
+            }
+        }
+        found_empty_row = true;
+        break;
+    }
+    if (found_empty_row) {
+        for(run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
+            rows[run_y].alignment.splice(run_x, 1);
+        }
+    }
+    normalizeMsa(msa_file, 'right');
+    msa_file.status.edited = true;
+    syncMsaToDom(msa_file);
+    tableSelection.moveSelection(1,0);
+}
+
+function normalizeMsa(msa_file, filling_from){
+    if (filling_from !== 'left' && filling_from !== 'right') {
+        filling_from = 'right';
+    }
+    //make alignments a square_matrix
+    max = 0;
+    for (var i=0; i< msa_file.rows.length; i++) {
+        var row = msa_file.rows[i];
+        if (row.unique) {
+            max = Math.max(max, row.alignment.length);
+        }
+    }
+    msa_file.width = max;
+    for (i=0; i< msa_file.rows.length; i++) {
+        row = msa_file.rows[i];
+        if (row.unique) {
+            while (row.alignment.length < max) {
+                if (filling_from == 'right') {
+                    row.alignment.push('-');
+                } else {
+                    row.alignment.splice(0,0,'-');
+                }
+            }
+        }
+    }
+}
+
+function removeGapColumns(msa_file) {
+    //remove columns containing only gaps
+    for (var x=max-1; x>=0; x--) {
+        var only_gaps = true;
+        for(i=0; i < msa_file.rows.length; i++) {
+            row = msa_file.rows[i];
+            if (row.unique && row.alignment[x].trim() !== '-') {
+                only_gaps = false;
+                break
+            }
+        }
+        if (!only_gaps) continue;
+        for(i=0; i< msa_file.rows.length; i++) {
+            row = msa_file.rows[i];
+            if (row.unique) {
+                row.alignment.splice(x,1);
+            }
+        }
+    }
+}
+
+function exportFile(msa_file) {
+    var data = '';
+    msa_file.meta_information.modified = getDate();
+    for (key in msa_file.meta_information) {
+        data += '@' + key + ': ' + msa_file.meta_information[key] + '\n';
+    }
+    for(var i=0; i<msa_file.rows.length; i++) {
+        var row = msa_file.rows[i];
+        var alignment;
+        if (row.unique){
+            alignment = row.alignment;
+        } else {
+            alignment = msa_file.rows[row.reference_idx].alignment;
+        }
+        var row_start = [];
+        if (msa_file.type == 'with_id') {
+            row_start.push(row.id);
+        }
+        row_start.push(fillWithDots(row.taxon, msa_file.taxlen));
+        data += row_start.join('\t') + '\t' + alignment.join('\t') + '\n'
+    }
+    var blob = new Blob([data], {
+        type: "text/plain;charset=utf-8"
+    });
+    saveAs(blob, msa_file.filename);
+}
+
+function getDate() {
+    var today = new Date();
+    var dd = today.getDate();
+    var mm = today.getMonth() + 1; //January is 0!
+    var yyyy = today.getFullYear();
+    var hh = today.getHours();
+    var mins = today.getMinutes();
+
+    if (mm < 10) mm = '0' + mm;
+    if (dd < 10) dd = '0' + dd;
+    if (hh < 10) hh = '0' + hh;
+    if (mins < 10) mins = '0' + mins;
+
+    return [yyyy, mm, dd].join('-') + ' ' + hh + ':' + mins;
 }
 
 /* fill string with dots */
-function fillWithDots(name,len)
-{
-  var dots = '.......................................';
-  return name + dots.substring(0,len-name.length);
+function fillWithDots(name, len) {
+    var dots = '.......................................';
+    return name + dots.substring(0, len - name.length);
 }
-
