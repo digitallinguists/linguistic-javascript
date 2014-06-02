@@ -20,6 +20,9 @@
   <select id="msa_select" style='display: none' onchange="fileManager.handleFileSelect(this);"></select>
   <input id="view" type="button" onclick="fileManager.showSelectedFile(false);" class="submit inactive" value="&nbsp;VIEW&nbsp;" />
   <input id='edit' type="button" onclick="fileManager.showSelectedFile(true);" class="submit inactive" value="&nbsp;EDIT&nbsp;" />
+  <input id="minimize" type="button" style='display: none'
+	 onclick="fileManager.removeGapColumns();" class="submit active"
+	 value="&nbsp;MINIMIZE&nbsp;" />
   <input id="save" type="button" onclick="fileManager.saveFiles();" class="submit inactive" value="&nbsp;SAVE&nbsp;" />
   <input id="undo_button" type="button" onclick="undoManager.undo();" class="submit inactive" value="&nbsp;UNDO&nbsp;" />
   <input id="redo_button" type="button" onclick="undoManager.redo();" class="submit inactive" value="&nbsp;REDO&nbsp;" />

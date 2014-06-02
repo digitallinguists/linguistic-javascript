@@ -88,6 +88,13 @@ var fileManager = (function () {
             document.getElementById('save').className = "submit active";
         },
 
+	removeGapColumns: function() {
+	    var msa_file = fileManager.activeFile();
+	    if (msa_file === undefined) return;
+	    removeGapColumns(msa_file);
+	    syncMsaToDom(msa_file);
+	},
+
         saveFiles: function() {
             if (MSAFiles === undefined) {
                 return;
@@ -95,6 +102,7 @@ var fileManager = (function () {
             var count = 0;
             for (var i=0; i<MSAFiles.length; i++) {
                 if (MSAFiles[i].status.edited) {
+		    removeGapColumns(MSAFiles[i]);
                     exportFile(MSAFiles[i]);
                     count += 1;
                 }
@@ -353,6 +361,7 @@ function showMSA(msa_file, edit_mode) {
 
     document.getElementById('view').disabled = !edit_mode;
     document.getElementById('edit').disabled = edit_mode;
+    document.getElementById('minimize').style.display = (edit_mode && 'inline' || 'none');
 }
 
 tableSelection = (function () {
@@ -393,15 +402,15 @@ tableSelection = (function () {
         }
         for (y = ul.y; y <= lr.y; y++) {
             node = getCellInTable(ul.x, y);
-            node.classList.remove('selected-left');
+            node === undefined || node.classList.remove('selected-left');
             node = getCellInTable(lr.x, y);
-            node.classList.remove('selected-right');
+            node === undefined || node.classList.remove('selected-right');
         }
         for (x = ul.x; x<= lr.x; x++) {
             node = getCellInTable(x,ul.y);
-            node.classList.remove('selected-top');
+            node === undefined || node.classList.remove('selected-top');
             node = getCellInTable(x,lr.y);
-            node.classList.remove('selected-bottom');
+            node === undefined || node.classList.remove('selected-bottom');
         }
     }
 
@@ -737,7 +746,7 @@ function removeGapColumns(msa_file) {
     for (var x=max-1; x>=0; x--) {
         var only_gaps = true;
         for(i=0; i < msa_file.rows.length; i++) {
-            row = msa_file.rows[i];
+            var row = msa_file.rows[i];
             if (row.unique && row.alignment[x].trim() !== '-') {
                 only_gaps = false;
                 break
