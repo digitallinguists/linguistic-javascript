@@ -424,8 +424,18 @@ tableSelection = (function () {
     }
 
     function startSelection(x,y) {
+	var msa_file = fileManager.activeFile();
+        if (msa_file === undefined) return;
+
+	//wrap around in x and y direction
+	if (x < 1) x = msa_file.width;
+	else if (x > msa_file.width) x = 1;
+
+	if (y < 0) y = msa_file.unique_count - 1;
+	else if (y >= msa_file.unique_count) y = 0
+
         var node = getCellInTable(x,y);
-        if (node === undefined || x === 0) return;
+	if (node === undefined) return;
         clearSelection();
         selectionStart.x = ul.x = lr.x = x;
         selectionStart.y = ul.y = lr.y = y;
@@ -437,8 +447,18 @@ tableSelection = (function () {
             lr.x === undefined || lr.y === undefined) {
             startSelection(x, y);
         }
+	var msa_file = fileManager.activeFile();
+        if (msa_file === undefined) return;
+
+	//wrap around in x and y direction
+	if (nx < 1) nx = msa_file.width;
+	else if (nx > msa_file.width) nx = 1;
+
+	if (ny < 0) ny = msa_file.unique_count - 1;
+	else if (ny >= msa_file.unique_count) ny = 0;
+
         var node = getCellInTable(nx,ny);
-        if (node === undefined || x === 0) return;
+        if (node === undefined) return;
         clearSelection();
         ul.x = Math.min(selectionStart.x, nx);
         ul.y = Math.min(selectionStart.y, ny);
