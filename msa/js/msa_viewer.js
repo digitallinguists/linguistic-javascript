@@ -238,6 +238,7 @@ function syncMsaToDom(msa_file) {
         while(alignment.length+1 > table_row.children.length) {
             var table_data = document.createElement('TD');
 	    table_data.classList.add('residue')
+	    table_data.onmousedown = tableSelection.mousedownHandler;
 	    table_data.appendChild(document.createTextNode(''));
             table_row.appendChild(table_data);
         }
@@ -348,6 +349,8 @@ function showMSA(msa_file, edit_mode) {
     if (msa_file.status.mode === 'edit') {
         $(document).keydown(tableSelection.keydownHandler);
     }
+    $("TD").mousedown(tableSelection.mousedownHandler);
+
     document.getElementById('view').disabled = !edit_mode;
     document.getElementById('edit').disabled = edit_mode;
 }
@@ -521,6 +524,12 @@ tableSelection = (function () {
             }
             return false;
         },
+
+	mousedownHandler: function mousedownHandler(event) {
+	    var position = getPositionInTable(event.target);
+	    if (position === undefined) return;
+	    startSelection(position.x, position.y);
+	},
 
         getSelection: function getSelection() {
             if (ul.x === undefined || ul.y === undefined ||
