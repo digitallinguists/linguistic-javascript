@@ -31,6 +31,7 @@ var MSARow = function() {
 var fileManager = (function () {
     var MSAFiles = undefined;
     var active_idx = -1; //-1 means no valid selection
+    var edit_mode = false;
 
     return {
         handleFiles: function (fileHandles) { //user selected new set of files
@@ -67,10 +68,12 @@ var fileManager = (function () {
             if (selected_idx < 0) return; //dummy value selected
             active_idx = selected_idx;
             showMSA(MSAFiles[selected_idx], false);
+            edit_mode = false;
         },
 
         showSelectedFile: function(unique){
-            showMSA(MSAFiles[active_idx], unique)
+            showMSA(MSAFiles[active_idx], unique);
+            edit_mode = unique;
         },
 
         fileLoaded: function(event, msa_obj, index) {
@@ -88,12 +91,14 @@ var fileManager = (function () {
             document.getElementById('save').className = "submit active";
         },
 
-	removeGapColumns: function() {
-	    var msa_file = fileManager.activeFile();
-	    if (msa_file === undefined) return;
-	    removeGapColumns(msa_file);
-	    syncMsaToDom(msa_file);
-	},
+        removeGapColumns: function() {
+            var msa_file = fileManager.activeFile();
+            if (msa_file === undefined) return;
+            tableSelection.clearSelection(); //may become invalid
+            removeGapColumns(msa_file);
+            syncMsaToDom(msa_file);
+            tableSelection.fixSelection();
+        },
 
         saveFiles: function() {
             if (MSAFiles === undefined) {
@@ -102,7 +107,16 @@ var fileManager = (function () {
             var count = 0;
             for (var i=0; i<MSAFiles.length; i++) {
                 if (MSAFiles[i].status.edited) {
-		    removeGapColumns(MSAFiles[i]);
+                    if (i === active_idx) {
+                        if (edit_mode){
+                            fileManager.removeGapColumns();
+                        } else {
+                            removeGapColumns(MSAFiles[i]);
+                            showMSA(MSAFiles[i], edit_mode);
+                        }
+                    } else {
+                        removeGapColumns(MSAFiles[i]);
+                    }
                     exportFile(MSAFiles[i]);
                     count += 1;
                 }
@@ -176,11 +190,11 @@ function parseMSA(msa_file) {
         var word = row.alignment.join('').replace(/-/g, '');
         if (word in seen) {
             row.unique = false;
-	    row.alignment = undefined;
+            row.alignment = undefined;
             row.reference_idx = seen[word];
         } else {
             seen[word] = i;
-	    msa_file.unique_count++;
+            msa_file.unique_count++;
         }
     }
     msa_file.status.parsed = true;
@@ -245,9 +259,9 @@ function syncMsaToDom(msa_file) {
         //sync cell count
         while(alignment.length+1 > table_row.children.length) {
             var table_data = document.createElement('TD');
-	    table_data.classList.add('residue')
-	    table_data.onmousedown = tableSelection.mousedownHandler;
-	    table_data.appendChild(document.createTextNode(''));
+            table_data.classList.add('residue')
+            table_data.onmousedown = tableSelection.mousedownHandler;
+            table_data.appendChild(document.createTextNode(''));
             table_row.appendChild(table_data);
         }
         while(alignment.length+1 < table_row.children.length) {
@@ -261,7 +275,7 @@ function syncMsaToDom(msa_file) {
         }
         for (var col_idx = 0; col_idx < alignment.length; col_idx++) {
             var cell = table_row.children[col_idx+1];
-	    cell.tabIndex = tab_index++;
+            cell.tabIndex = tab_index++;
             textNode = cell.childNodes[0];
             if (textNode.nodeValue !== alignment[col_idx]) {
                 textNode.nodeValue = alignment[col_idx];
@@ -364,7 +378,7 @@ function showMSA(msa_file, edit_mode) {
     document.getElementById('minimize').style.display = (edit_mode && 'inline' || 'none');
 }
 
-tableSelection = (function () {
+var tableSelection = (function () {
     var ul = { //upper left corner
         x: undefined,
         y: undefined
@@ -414,6 +428,24 @@ tableSelection = (function () {
         }
     }
 
+    /* called after minimize; reduction of size may have made the selection invalid */
+    function fixSelection() {
+        if (ul.x === undefined || ul.y === undefined ||
+            lr.x === undefined || lr.y === undefined) {
+            return;
+        }
+        var msa_file = fileManager.activeFile();
+        if (lr.x > msa_file.width) lr.x = msa_file.width;
+        if (ul.x > msa_file.width) ul.x = msa_file.width;
+        if (selectionStart.x > msa_file.width) selectionStart.x = msa_file.width;
+        markSelection();
+        if (document.activeElement === undefined || document.activeElement.nodeName !== 'TD') {
+            var x = selectionStart.x === ul.x && lr.x || ul.x;
+            node = getCellInTable(x, ul.y);
+            node === undefined || node.focus();
+        }
+    }
+
     function markSelection() {
         var x, y, node;
 
@@ -436,18 +468,18 @@ tableSelection = (function () {
     }
 
     function startSelection(x,y) {
-	var msa_file = fileManager.activeFile();
+        var msa_file = fileManager.activeFile();
         if (msa_file === undefined) return;
 
-	//wrap around in x and y direction
-	if (x < 1) x = msa_file.width;
-	else if (x > msa_file.width) x = 1;
+        //wrap around in x and y direction
+        if (x < 1) x = msa_file.width;
+        else if (x > msa_file.width) x = 1;
 
-	if (y < 0) y = msa_file.unique_count - 1;
-	else if (y >= msa_file.unique_count) y = 0
+        if (y < 0) y = msa_file.unique_count - 1;
+        else if (y >= msa_file.unique_count) y = 0
 
         var node = getCellInTable(x,y);
-	if (node === undefined) return;
+        if (node === undefined) return;
         clearSelection();
         selectionStart.x = ul.x = lr.x = x;
         selectionStart.y = ul.y = lr.y = y;
@@ -455,19 +487,19 @@ tableSelection = (function () {
     }
 
     function extendSelection(x, y, nx, ny) {
-	if (ul.x === undefined || ul.y === undefined ||
+        if (ul.x === undefined || ul.y === undefined ||
             lr.x === undefined || lr.y === undefined) {
             startSelection(x, y);
         }
-	var msa_file = fileManager.activeFile();
+        var msa_file = fileManager.activeFile();
         if (msa_file === undefined) return;
 
-	//wrap around in x and y direction
-	if (nx < 1) nx = msa_file.width;
-	else if (nx > msa_file.width) nx = 1;
+        //wrap around in x and y direction
+        if (nx < 1) nx = msa_file.width;
+        else if (nx > msa_file.width) nx = 1;
 
-	if (ny < 0) ny = msa_file.unique_count - 1;
-	else if (ny >= msa_file.unique_count) ny = 0;
+        if (ny < 0) ny = msa_file.unique_count - 1;
+        else if (ny >= msa_file.unique_count) ny = 0;
 
         var node = getCellInTable(nx,ny);
         if (node === undefined) return;
@@ -486,19 +518,19 @@ tableSelection = (function () {
             if (active.tagName !== "TD")
                 return undefined;
             var position = getPositionInTable(active);
-	    if (event.keyCode === 13) {
-		if (event.shiftKey) {
-		    if (event.ctrlKey || event.metaKey) {
-			splitSelectionAndFill('left');
+            if (event.keyCode === 13) {
+                if (event.shiftKey) {
+                    if (event.ctrlKey || event.metaKey) {
+                        splitSelectionAndFill('left');
                     } else {
-			splitSelectionAndFill('right');
+                        splitSelectionAndFill('right');
                     }
-		} else if (event.ctrlKey || event.metaKey) {
+                } else if (event.ctrlKey || event.metaKey) {
                     mergeSelectionAndFill('left');
                 } else {
                     mergeSelectionAndFill('right');
                 }
-	    } else if (event.keyCode === 46 || event.keyCode === 8) { // DEL or Backspace
+            } else if (event.keyCode === 46 || event.keyCode === 8) { // DEL or Backspace
                 if (event.ctrlKey || event.metaKey) {
                     deleteSelectionAndFill('left');
                 } else {
@@ -534,11 +566,11 @@ tableSelection = (function () {
             return false;
         },
 
-	mousedownHandler: function mousedownHandler(event) {
-	    var position = getPositionInTable(event.target);
-	    if (position === undefined) return;
-	    startSelection(position.x, position.y);
-	},
+        mousedownHandler: function mousedownHandler(event) {
+            var position = getPositionInTable(event.target);
+            if (position === undefined) return;
+            startSelection(position.x, position.y);
+        },
 
         getSelection: function getSelection() {
             if (ul.x === undefined || ul.y === undefined ||
@@ -548,35 +580,41 @@ tableSelection = (function () {
            return {ul: {x: ul.x-1, y: ul.y}, lr: {x: lr.x-1, y: lr.y}}
         },
 
-	moveSelection: function moveSelection(dx,dy) {
-	   if (ul.x === undefined || ul.y === undefined ||
+        clearSelection: clearSelection,
+        
+        fixSelection: fixSelection,
+
+        moveSelection: function moveSelection(dx,dy) {
+           if (ul.x === undefined || ul.y === undefined ||
                 lr.x === undefined || lr.y === undefined) {
                 return;
             }
-	    var msa_file = fileManager.activeFile();
-	    if(msa_file === undefined || 
-	       0 > ul.x + dx || lr.x+dx > msa_file.width ||
-	       0 > ul.y + dy || lr.y+dy > msa_file.unique_count) {
-		return;
-	    }
+            var msa_file = fileManager.activeFile();
+            if(msa_file === undefined || 
+               0 > ul.x + dx || lr.x+dx > msa_file.width ||
+               0 > ul.y + dy || lr.y+dy > msa_file.unique_count) {
+                return;
+            }
 
-	    clearSelection();
-	    ul.x += dx;
-	    lr.x += dx;
-	    ul.y += dy;
-	    lr.y += dy;
-	    markSelection();
+            clearSelection();
+            ul.x += dx;
+            lr.x += dx;
+            ul.y += dy;
+            lr.y += dy;
+            selectionStart.x += dx;
+            selectionStart.y += dy;
+            markSelection();
 
-	    var active = document.activeElement;
+            var active = document.activeElement;
             if (active.tagName !== "TD") {
                 return;
-	    }
+            }
             var position = getPositionInTable(active);
-	    var cell = getCellInTable(position.x + dx, position.y + dy);
-	    if (cell !== undefined) {
-		cell.focus();
-	    }
-	}
+            var cell = getCellInTable(position.x + dx, position.y + dy);
+            if (cell !== undefined) {
+                cell.focus();
+            }
+        }
     };
 
 })();
@@ -584,15 +622,15 @@ tableSelection = (function () {
 function splitString(s) {
     var result = [];
     for (var i in s) {
-	var code = s.charCodeAt(i);
-	i = s.charAt(i);
-	if (result.length > 0 &&
-	    ((code>=0xDC00 && code<0xE000) /*low surrogate*/
-	      || (code>=0x0300 && code<0x0370) /*combining mark*/))  {
-	    result[result.length-1] = result[result.length-1] + i;
-	} else {
-	    result.push(i);
-	}
+        var code = s.charCodeAt(i);
+        i = s.charAt(i);
+        if (result.length > 0 &&
+            ((code>=0xDC00 && code<0xE000) /*low surrogate*/
+              || (code>=0x0300 && code<0x0370) /*combining mark*/))  {
+            result[result.length-1] = result[result.length-1] + i;
+        } else {
+            result.push(i);
+        }
     }
     return result;
 }
@@ -603,11 +641,11 @@ function splitSelectionAndFill(filling_from) {
     if (msa_file === undefined || selection == undefined) return;
     var rows = msa_file.rows.filter(function(elem) { return elem.unique });
     for (var y = selection.ul.y; y <= selection.lr.y; y++) {
-	var splice_args = [selection.ul.x, selection.lr.x-selection.ul.x+1];
-	for (var x = selection.ul.x; x <= selection.lr.x; x++) {
-	    Array.prototype.push.apply(splice_args, splitString(rows[y].alignment[x]));
-	}
-	Array.prototype.splice.apply(rows[y].alignment, splice_args);
+        var splice_args = [selection.ul.x, selection.lr.x-selection.ul.x+1];
+        for (var x = selection.ul.x; x <= selection.lr.x; x++) {
+            Array.prototype.push.apply(splice_args, splitString(rows[y].alignment[x]));
+        }
+        Array.prototype.splice.apply(rows[y].alignment, splice_args);
     }
     msa_file.status.edited = true;
     normalizeMsa(msa_file, filling_from);
@@ -620,14 +658,14 @@ function mergeSelectionAndFill(filling_from) {
     if (msa_file === undefined || selection == undefined) return;
     var rows = msa_file.rows.filter(function(elem) { return elem.unique });
     for (var y = selection.ul.y; y <= selection.lr.y; y++) {
-	var repl = ''
-	for (var x = selection.ul.x; x <= selection.lr.x; x++) {
-	    if (rows[y].alignment[x] != '-' && rows[y].alignment[x] != '?') {
-		repl += rows[y].alignment[x];
-	    }
-	}
-	if (repl === '') repl = '-';
-	rows[y].alignment.splice(selection.ul.x, selection.lr.x-selection.ul.x+1, repl)
+        var repl = ''
+        for (var x = selection.ul.x; x <= selection.lr.x; x++) {
+            if (rows[y].alignment[x] != '-' && rows[y].alignment[x] != '?') {
+                repl += rows[y].alignment[x];
+            }
+        }
+        if (repl === '') repl = '-';
+        rows[y].alignment.splice(selection.ul.x, selection.lr.x-selection.ul.x+1, repl)
     }
     msa_file.status.edited = true;
     normalizeMsa(msa_file, filling_from);
@@ -656,7 +694,7 @@ function moveSelectionLeft() {
     var rows = msa_file.rows.filter(function(elem) { return elem.unique });
 
     for(run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
-	    rows[run_y].alignment.splice(selection.lr.x + 1, 0, '-');
+            rows[run_y].alignment.splice(selection.lr.x + 1, 0, '-');
     }
 
     var found_empty_row = false;
@@ -674,9 +712,9 @@ function moveSelectionLeft() {
         for(run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
             rows[run_y].alignment.splice(run_x, 1);
         }
-	tableSelection.moveSelection(-1,0);
+        tableSelection.moveSelection(-1,0);
     } else {
-	normalizeMsa(msa_file, 'left');
+        normalizeMsa(msa_file, 'left');
     }
     msa_file.status.edited = true;
     syncMsaToDom(msa_file);
@@ -689,7 +727,7 @@ function moveSelectionRight() {
     var rows = msa_file.rows.filter(function(elem) { return elem.unique });
 
     for(run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
-	rows[run_y].alignment.splice(selection.ul.x, 0, '-');
+        rows[run_y].alignment.splice(selection.ul.x, 0, '-');
     }
 
     var found_empty_row = false;
@@ -743,7 +781,7 @@ function normalizeMsa(msa_file, filling_from){
 
 function removeGapColumns(msa_file) {
     //remove columns containing only gaps
-    for (var x=max-1; x>=0; x--) {
+    for (var x=msa_file.width-1; x>=0; x--) {
         var only_gaps = true;
         for(i=0; i < msa_file.rows.length; i++) {
             var row = msa_file.rows[i];
@@ -753,6 +791,7 @@ function removeGapColumns(msa_file) {
             }
         }
         if (!only_gaps) continue;
+        msa_file.width -= 1;
         for(i=0; i< msa_file.rows.length; i++) {
             row = msa_file.rows[i];
             if (row.unique) {
