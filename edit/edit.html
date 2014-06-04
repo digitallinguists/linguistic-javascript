@@ -1,9 +1,16 @@
 <html>
   <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <script type="text/javascript" src="https://raw.githubusercontent.com/eligrey/FileSaver.js/master/FileSaver.js"></script>
     <script type="text/javascript" src="js/edit.js"></script>
 <style>
 #db{display:none;}
+#alignments{
+  display: none;
+  float: left;
+  background-color: LightGray;
+  margin-left: 30px;
+}
 td.alm{
   width:50px;
   padding-left:10px;
@@ -14,25 +21,62 @@ td.alm{
   color:white;
   border: 1px solid white;
 }
+td.dist{
+  background-color: CornflowerBlue;
+}
 td.gap{
   background-color:black;
 }
 td.match{
   background-color:gray;
 }
+table.almtbl{
+  display: block;
+  float: none;
+  border: 5px solid black;
+}
 td.mismatch{
   color:white;
   background-color:red;
 }
+#warning {
+  display: none;
+  color: red;
+  font-weight: bold;
+}
+#stringsA{float:left}
+#stringsB{float:left;margin-left:10px;}
+#buttons{float:left;margin-left:10px;}
+#button1{display:block;margin-bottom:10px;};
 </style>
 
   </head>
   <body>  
-  <h3>Alignment Demo in JavaScript</h3>
-  <input type="text" id="stringA" onkeyup="editDist();"/>
-  <input type="text" id="stringB" onkeyup="editDist();"/>
+  <h3>Alignment of two words in realtime</h3>
+  Just type in arbitrary words in the fields and check out what happens.<br><br>
+  <input type="text" id="stringA" placeholder="first word" onkeyup="editDistSimple();"/>
+  <input type="text" id="stringB" placeholder="second word" onkeyup="editDistSimple();"/>
 
   <div id="output"></div>
   <div id="db"></div>
+  <br>
+  <h3>Align multiple word pairs</h3>
+  Inser multiple words in both text fields, align the words and export the alignments to a separate file.<br><br>
+  <textarea id="stringsA" rows="30" cols="30" placeholder="words of one language">hant
+maus
+fūs
+</textarea>
+  <textarea id="stringsB" rows="30" cols="30" placeholder="words of other language">hænd
+mauz
+fut</textarea>
+<div id="buttons">
+  <input type="button" id="button1" value="SUBMIT" onclick="editAll();" />
+  <input type="button" id="button1" value="EXPORT" onclick="saveAlms();" /></div>
+
+  <div id="alignments"></div>
+
+  
+  <br>
+  <div id="warning"> </div>
   </body>
 </head>
