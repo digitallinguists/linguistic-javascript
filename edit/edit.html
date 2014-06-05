@@ -2,6 +2,9 @@
   <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <script type="text/javascript" src="js/filesaver.js"></script>
+    <script type="text/javascript" src="js/html2canvas.js"></script>
+    <script src="js/base64.js"></script>
+    <script src="js/canvas2image.js"></script>
     <script type="text/javascript" src="js/edit.js"></script>
 <style>
 #db{display:none;}
@@ -30,6 +33,9 @@ td.gap{
 td.match{
   background-color:gray;
 }
+td.smatch{
+  background-color: LightGray;
+}
 table.almtbl{
   display: block;
   float: none;
@@ -47,7 +53,7 @@ td.mismatch{
 #stringsA{float:left}
 #stringsB{float:left;margin-left:10px;}
 #buttons{float:left;margin-left:10px;}
-#button1{display:block;margin-bottom:10px;};
+.button1{display:block;margin-bottom:10px;};
 </style>
 
   </head>
@@ -71,8 +77,9 @@ mauz
 fut
 tʃ ɪ k ə n</textarea>
 <div id="buttons">
-  <input type="button" id="button1" value="SUBMIT" onclick="editAll();" />
-  <input type="button" id="button1" value="EXPORT" onclick="saveAlms();" /></div>
+  <input type="button" class="button1" value="SUBMIT" onclick="editAll();" />
+  <input type="button" class="button1" value="EXPORT HTML" onclick="saveAlms();" />
+  <input type="button" class="button1" value="EXPORT IMAGE" onclick="savePNG();" /></div>
 
   <div id="alignments"></div>
 

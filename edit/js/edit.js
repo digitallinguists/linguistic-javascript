@@ -42,6 +42,11 @@ function editDistSimple()
       almas += '<td class="alm gap">'+charA+"</td>";
       almbs += '<td class="alm gap">'+charB+"</td>";
     }
+    else if(charA.indexOf(charB.slice(0,1)) != -1 || charB.indexOf(charA.slice(0,1)) != -1)
+    {
+      almas += '<td class="alm smatch">'+charA+"</td>";
+      almbs += '<td class="alm smatch">'+charB+"</td>";
+    }
     else
     {
       almas += '<td class="alm mismatch">'+charA+"</td>";
@@ -299,6 +304,11 @@ function tabularize(almA,almB,dist)
       textA += '<td class="match alm">'+elmA+'</td>';
       textB += '<td class="match alm">'+elmB+'</td>';
     }
+    else if(elmA.indexOf(elmB.slice(0,1)) != -1 || elmB.indexOf(elmA.slice(0,1)) != -1)
+    {
+      textA += '<td class="smatch alm">'+elmA+'</td>';
+      textB += '<td class="smatch alm">'+elmB+'</td>';
+    }
     else
     {
       textA += '<td class="mismatch alm">'+elmA+'</td>';
@@ -322,6 +332,21 @@ function saveAlms()
   saveAs(blob, 'alignments.html');  
 }
 
+function savePNG()
+{
+  html2canvas(
+      document.getElementById('alignments'), 
+      {
+        onrendered: function(canvas) {
+          Canvas2Image.saveAsPNG(canvas);
+          //var blob = new Blob([canvas.toDataURL('image/jpeg')], {type: "image/jpeg"});
+          //saveAs(blob, 'alignments.jpg');
+          }
+      }
+
+      )
+  
+}
 
 
 function editList(seqA,seqB)
