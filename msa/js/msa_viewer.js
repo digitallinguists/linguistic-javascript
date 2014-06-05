@@ -33,6 +33,39 @@ var fileManager = (function () {
     var active_idx = -1; //-1 means no valid selection
     var edit_mode = false;
 
+    function setEditMode(new_mode) {
+        edit_mode = new_mode;
+        document.getElementById('undo_button').style.display = (new_mode && 'inline' || 'none');
+        document.getElementById('redo_button').style.display = (new_mode && 'inline' || 'none');
+    }
+
+    function exportFile(msa_file) {
+        var data = '';
+        msa_file.meta_information.modified = getDate();
+        for (key in msa_file.meta_information) {
+            data += '@' + key + ': ' + msa_file.meta_information[key] + '\n';
+        }
+        for(var i=0; i<msa_file.rows.length; i++) {
+            var row = msa_file.rows[i];
+            var alignment;
+            if (row.unique){
+                alignment = row.alignment;
+            } else {
+                alignment = msa_file.rows[row.reference_idx].alignment;
+            }
+            var row_start = [];
+            if (msa_file.type == 'with_id') {
+                row_start.push(row.id);
+            }
+            row_start.push(fillWithDots(row.taxon, msa_file.taxlen));
+            data += row_start.join('\t') + '\t' + alignment.join('\t') + '\n'
+        }
+        var blob = new Blob([data], {
+            type: "text/plain;charset=utf-8"
+        });
+        saveAs(blob, msa_file.filename);
+    }
+
     return {
         handleFiles: function (fileHandles) { //user selected new set of files
             //clear drop down list
@@ -68,12 +101,14 @@ var fileManager = (function () {
             if (selected_idx < 0) return; //dummy value selected
             active_idx = selected_idx;
             showMSA(MSAFiles[selected_idx], false);
-            edit_mode = false;
+            setEditMode(false);
         },
 
         showSelectedFile: function(unique){
+	    if (unique === edit_mode) return; // no op
             showMSA(MSAFiles[active_idx], unique);
-            edit_mode = unique;
+            setEditMode(unique);
+            if (unique) undoManager.clear();
         },
 
         fileLoaded: function(event, msa_obj, index) {
@@ -91,15 +126,6 @@ var fileManager = (function () {
             document.getElementById('save').className = "submit active";
         },
 
-        removeGapColumns: function() {
-            var msa_file = fileManager.activeFile();
-            if (msa_file === undefined) return;
-            tableSelection.clearSelection(); //may become invalid
-            removeGapColumns(msa_file);
-            syncMsaToDom(msa_file);
-            tableSelection.fixSelection();
-        },
-
         saveFiles: function() {
             if (MSAFiles === undefined) {
                 return;
@@ -109,7 +135,7 @@ var fileManager = (function () {
                 if (MSAFiles[i].status.edited) {
                     if (i === active_idx) {
                         if (edit_mode){
-                            fileManager.removeGapColumns();
+                            executeOperation(removeGapColumnsForActive);
                         } else {
                             removeGapColumns(MSAFiles[i]);
                             showMSA(MSAFiles[i], edit_mode);
@@ -134,6 +160,13 @@ var fileManager = (function () {
         }
     };
 })();
+
+function undoManagerChanged() {
+    var undo = document.getElementById('undo_button');
+    undo.disabled = !undoManager.hasUndo();
+    var redo = document.getElementById('redo_button');
+    redo.disabled = !undoManager.hasRedo();
+}
 
 function parseMSA(msa_file) {
     var text = msa_file.filecontent;
@@ -287,6 +320,7 @@ function syncMsaToDom(msa_file) {
     }
 }
 
+//completely rebuild DOM table for the given msa_file
 function showMSA(msa_file, edit_mode) {
     /* parse MSA files */
     if (msa_file.status.parsed == false) {
@@ -383,6 +417,7 @@ var tableSelection = (function () {
         x: undefined,
         y: undefined
     }; 
+
     var lr = { //lower right corner
         x: undefined,
         y: undefined
@@ -438,12 +473,6 @@ var tableSelection = (function () {
         if (lr.x > msa_file.width) lr.x = msa_file.width;
         if (ul.x > msa_file.width) ul.x = msa_file.width;
         if (selectionStart.x > msa_file.width) selectionStart.x = msa_file.width;
-        markSelection();
-        if (document.activeElement === undefined || document.activeElement.nodeName !== 'TD') {
-            var x = selectionStart.x === ul.x && lr.x || ul.x;
-            node = getCellInTable(x, ul.y);
-            node === undefined || node.focus();
-        }
     }
 
     function markSelection() {
@@ -465,6 +494,10 @@ var tableSelection = (function () {
             node = getCellInTable(x,lr.y);
             node.classList.add('selected-bottom');
         }
+        x = selectionStart.x === ul.x && lr.x || ul.x;
+        y = selectionStart.y === ul.y && lr.y || ul.y;
+        node = getCellInTable(x, y);
+        node === undefined || node.focus();
     }
 
     function startSelection(x,y) {
@@ -515,32 +548,42 @@ var tableSelection = (function () {
     return {
         keydownHandler: function keydownHandler(event) {
             var active = document.activeElement;
-            if (active.tagName !== "TD")
+            if (active === undefined || active.tagName !== "TD")
                 return undefined;
             var position = getPositionInTable(active);
-            if (event.keyCode === 13) {
+	    if (event.keyCode === 86) { //v iew
+		fileManager.showSelectedFile(false)
+	    } else if (event.keyCode === 85) { //u ndo
+		undoManager.undo();
+	    } else if (event.keyCode === 82) { //r edo
+		undoManager.redo();
+	    } else if (event.keyCode === 83) { //s ave
+		fileManager.saveFiles();
+	    } else if (event.keyCode === 77) { //m inimize
+		executeOperation(removeGapColumnsForActive);
+            } else if (event.keyCode === 13) {
                 if (event.shiftKey) {
                     if (event.ctrlKey || event.metaKey) {
-                        splitSelectionAndFill('left');
+                        executeOperation(function(msa, sel) {splitSelectionAndFill(msa, sel, 'left')});
                     } else {
-                        splitSelectionAndFill('right');
+                        executeOperation(function(msa, sel) {splitSelectionAndFill(msa, sel, 'right')});
                     }
                 } else if (event.ctrlKey || event.metaKey) {
-                    mergeSelectionAndFill('left');
+                    executeOperation(function(msa, sel) {mergeSelectionAndFill(msa, sel, 'left')});
                 } else {
-                    mergeSelectionAndFill('right');
+                    executeOperation(function(msa, sel) {mergeSelectionAndFill(msa, sel, 'right')});
                 }
             } else if (event.keyCode === 46 || event.keyCode === 8) { // DEL or Backspace
                 if (event.ctrlKey || event.metaKey) {
-                    deleteSelectionAndFill('left');
+                    executeOperation(function(msa, sel) {deleteSelectionAndFill(msa, sel, 'left')});
                 } else {
-                    deleteSelectionAndFill('right');
+                    executeOperation(function(msa, sel) {deleteSelectionAndFill(msa, sel, 'right')});
                 }
             } else if ([37,39].indexOf(event.keyCode) !== -1 && (event.ctrlKey || event.metaKey)) {
                 if (event.keyCode === 37) {
-                    moveSelectionLeft();
+                    executeOperation(function(msa, sel) {moveSelectionLeft(msa, sel)});
                 } else {
-                    moveSelectionRight();
+                    executeOperation(function(msa, sel) {moveSelectionRight(msa, sel)});
                 }
             } else if ([37,38,39,40].indexOf(event.keyCode) != -1) { //arrow keys
                 var nx = position.x;
@@ -552,10 +595,10 @@ var tableSelection = (function () {
                     ny--;
                 }
                 else if (event.keyCode == 39) {
-                    nx++
+                    nx++;
                 }
                 else if (event.keyCode == 40) {
-                    ny++
+                    ny++;
                 }
                 if (event.shiftKey) {
                     extendSelection(position.x, position.y, nx,ny);
@@ -574,14 +617,31 @@ var tableSelection = (function () {
 
         getSelection: function getSelection() {
             if (ul.x === undefined || ul.y === undefined ||
-                lr.x === undefined || lr.y === undefined) {
+                lr.x === undefined || lr.y === undefined ||
+                selectionStart.x === undefined || selectionStart.y === undefined) {
                 return undefined;
             }
-           return {ul: {x: ul.x-1, y: ul.y}, lr: {x: lr.x-1, y: lr.y}}
+            return {ul: {x: ul.x-1, y: ul.y}, lr: {x: lr.x-1, y: lr.y},
+                    selectionStart: {x: selectionStart.x-1, y: selectionStart.y}};
+        },
+
+        setSelection: function setSelection(selection) {
+            if (selection === undefined) {
+                ul.x = ul.y = lr.x = lr.y = selectionStart.x = selectionStart.y = undefined;
+                return;
+            }
+            ul.x = selection.ul.x+1;
+            ul.y = selection.ul.y;
+            lr.x = selection.lr.x+1;
+            lr.y = selection.lr.y;
+            selectionStart.x = selection.selectionStart.x+1;
+            selectionStart.y = selection.selectionStart.y;
         },
 
         clearSelection: clearSelection,
         
+	markSelection: markSelection,
+
         fixSelection: fixSelection,
 
         moveSelection: function moveSelection(dx,dy) {
@@ -596,49 +656,76 @@ var tableSelection = (function () {
                 return;
             }
 
-            clearSelection();
             ul.x += dx;
             lr.x += dx;
             ul.y += dy;
             lr.y += dy;
             selectionStart.x += dx;
             selectionStart.y += dy;
-            markSelection();
-
-            var active = document.activeElement;
-            if (active.tagName !== "TD") {
-                return;
-            }
-            var position = getPositionInTable(active);
-            var cell = getCellInTable(position.x + dx, position.y + dy);
-            if (cell !== undefined) {
-                cell.focus();
-            }
         }
     };
 
 })();
 
-function splitString(s) {
+/*
+ * Operations on alignments
+ *
+ * They should reside in the prototype of MSAFile, but they may (in the future)
+ * get (de)serialized with JSON and the functions would be lost.
+ */
+function captureCurrentState() {
+    var selection = tableSelection.getSelection();
+    var alignments = getAlignmentState(fileManager.activeFile());
+    
+    return function () {
+        var msa_file = fileManager.activeFile();
+        tableSelection.clearSelection();
+        setAlignmentState(msa_file, alignments);
+        syncMsaToDom(msa_file);
+        tableSelection.setSelection(selection);
+        tableSelection.markSelection();
+    };
+}
+
+function getAlignmentState(msa_file) {
     var result = [];
-    for (var i in s) {
-        var code = s.charCodeAt(i);
-        i = s.charAt(i);
-        if (result.length > 0 &&
-            ((code>=0xDC00 && code<0xE000) /*low surrogate*/
-              || (code>=0x0300 && code<0x0370) /*combining mark*/))  {
-            result[result.length-1] = result[result.length-1] + i;
-        } else {
-            result.push(i);
-        }
+    for (var i = 0; i < msa_file.rows.length; i++) {
+        var row = msa_file.rows[i];
+        if (row.unique) result.push(row.alignment.slice(0));
     }
     return result;
 }
 
-function splitSelectionAndFill(filling_from) {
+function setAlignmentState(msa_file, alignments) {
+    var rows = msa_file.rows.filter(function(elem) { return elem.unique });
+    for (var i = 0; i < rows.length; i++) {
+        rows[i].alignment = alignments[i].slice(0);
+    }
+    msa_file.width = rows[0].alignment.length;
+}
+
+function executeOperation(func) {
     var msa_file = fileManager.activeFile();
     var selection = tableSelection.getSelection();
     if (msa_file === undefined || selection == undefined) return;
+
+    var undoFunc = captureCurrentState();
+    tableSelection.clearSelection();
+    func(msa_file, selection);
+    syncMsaToDom(msa_file);
+    tableSelection.markSelection();
+    undoManager.add({ undo: undoFunc,
+                      redo: function() {
+			  tableSelection.clearSelection();
+			  tableSelection.setSelection(selection);
+			  func(msa_file, selection);
+			  syncMsaToDom(msa_file);
+			  tableSelection.markSelection();
+		      }
+		    });
+}
+
+function splitSelectionAndFill(msa_file, selection, filling_from) {
     var rows = msa_file.rows.filter(function(elem) { return elem.unique });
     for (var y = selection.ul.y; y <= selection.lr.y; y++) {
         var splice_args = [selection.ul.x, selection.lr.x-selection.ul.x+1];
@@ -649,13 +736,9 @@ function splitSelectionAndFill(filling_from) {
     }
     msa_file.status.edited = true;
     normalizeMsa(msa_file, filling_from);
-    syncMsaToDom(msa_file);  
 }
 
-function mergeSelectionAndFill(filling_from) {
-    var msa_file = fileManager.activeFile();
-    var selection = tableSelection.getSelection();
-    if (msa_file === undefined || selection == undefined) return;
+function mergeSelectionAndFill(msa_file, selection, filling_from) {
     var rows = msa_file.rows.filter(function(elem) { return elem.unique });
     for (var y = selection.ul.y; y <= selection.lr.y; y++) {
         var repl = ''
@@ -669,30 +752,20 @@ function mergeSelectionAndFill(filling_from) {
     }
     msa_file.status.edited = true;
     normalizeMsa(msa_file, filling_from);
-    syncMsaToDom(msa_file);
 }
 
-function deleteSelectionAndFill(filling_from) {
-    var msa_file = fileManager.activeFile();
-    var selection = tableSelection.getSelection();
-    if (msa_file === undefined || selection == undefined) return;
+function deleteSelectionAndFill(msa_file, selection, filling_from) {
     var rows = msa_file.rows.filter(function(elem) { return elem.unique });
     var count = selection.lr.x-selection.ul.x+1;
     for (var y=selection.ul.y; y<=selection.lr.y; y++) {
         rows[y].alignment.splice(selection.ul.x, count);
     }
-
     msa_file.status.edited = true;
     normalizeMsa(msa_file, filling_from);
-    syncMsaToDom(msa_file);
 }
 
-function moveSelectionLeft() {
-    var msa_file = fileManager.activeFile();
-    var selection = tableSelection.getSelection();
-    if (msa_file === undefined || selection == undefined) return;
+function moveSelectionLeft(msa_file, selection) {
     var rows = msa_file.rows.filter(function(elem) { return elem.unique });
-
     for(run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
             rows[run_y].alignment.splice(selection.lr.x + 1, 0, '-');
     }
@@ -717,13 +790,9 @@ function moveSelectionLeft() {
         normalizeMsa(msa_file, 'left');
     }
     msa_file.status.edited = true;
-    syncMsaToDom(msa_file);
 }
 
-function moveSelectionRight() {
-    var msa_file = fileManager.activeFile();
-    var selection = tableSelection.getSelection();
-    if (msa_file === undefined || selection == undefined) return;
+function moveSelectionRight(msa_file, selection) {
     var rows = msa_file.rows.filter(function(elem) { return elem.unique });
 
     for(run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
@@ -748,7 +817,6 @@ function moveSelectionRight() {
     }
     normalizeMsa(msa_file, 'right');
     msa_file.status.edited = true;
-    syncMsaToDom(msa_file);
     tableSelection.moveSelection(1,0);
 }
 
@@ -779,6 +847,14 @@ function normalizeMsa(msa_file, filling_from){
     }
 }
 
+//include UI update
+function removeGapColumnsForActive(msa_file) {
+    tableSelection.clearSelection(); //may become invalid
+    removeGapColumns(msa_file);
+    tableSelection.fixSelection();
+}
+
+//do the actual work
 function removeGapColumns(msa_file) {
     //remove columns containing only gaps
     for (var x=msa_file.width-1; x>=0; x--) {
@@ -801,32 +877,9 @@ function removeGapColumns(msa_file) {
     }
 }
 
-function exportFile(msa_file) {
-    var data = '';
-    msa_file.meta_information.modified = getDate();
-    for (key in msa_file.meta_information) {
-        data += '@' + key + ': ' + msa_file.meta_information[key] + '\n';
-    }
-    for(var i=0; i<msa_file.rows.length; i++) {
-        var row = msa_file.rows[i];
-        var alignment;
-        if (row.unique){
-            alignment = row.alignment;
-        } else {
-            alignment = msa_file.rows[row.reference_idx].alignment;
-        }
-        var row_start = [];
-        if (msa_file.type == 'with_id') {
-            row_start.push(row.id);
-        }
-        row_start.push(fillWithDots(row.taxon, msa_file.taxlen));
-        data += row_start.join('\t') + '\t' + alignment.join('\t') + '\n'
-    }
-    var blob = new Blob([data], {
-        type: "text/plain;charset=utf-8"
-    });
-    saveAs(blob, msa_file.filename);
-}
+/*
+ * (generic) helper functions
+ */
 
 function getDate() {
     var today = new Date();
@@ -844,8 +897,31 @@ function getDate() {
     return [yyyy, mm, dd].join('-') + ' ' + hh + ':' + mins;
 }
 
-/* fill string with dots */
+// split a string into something approaching graphemes
+function splitString(s) {
+    var result = [];
+    for (var i in s) {
+        var code = s.charCodeAt(i);
+        i = s.charAt(i);
+        if (result.length > 0 &&
+            ((code>=0xDC00 && code<0xE000) /*low surrogate*/
+              || (code>=0x0300 && code<0x0370) /*combining mark*/))  {
+            result[result.length-1] = result[result.length-1] + i;
+        } else {
+            result.push(i);
+        }
+    }
+    return result;
+}
+
+// pad a string with dots to a specific length
 function fillWithDots(name, len) {
     var dots = '.......................................';
     return name + dots.substring(0, len - name.length);
+}
+
+window.onload = function() {
+    undoManager = new UndoManager();
+    undoManager.setCallback(undoManagerChanged);
+    undoManagerChanged();
 }

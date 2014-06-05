@@ -15,41 +15,23 @@
   <h3>MSA Viewer</h3>
   <!--<label for="file" id="Selector">Browse an MSA file: </label>-->
   <input type="file" id="file" name="file" multiple accept=".msa"
-	 onchange="fileManager.handleFiles(this.files);" class="submit2 active"
+	 onchange="fileManager.handleFiles(this.files)" class="submit2 active"
 	 />
-  <select id="msa_select" style='display: none' onchange="fileManager.handleFileSelect(this);"></select>
-  <input id="view" type="button" onclick="fileManager.showSelectedFile(false);" class="submit inactive" value="&nbsp;VIEW&nbsp;" />
-  <input id='edit' type="button" onclick="fileManager.showSelectedFile(true);" class="submit inactive" value="&nbsp;EDIT&nbsp;" />
+  <select id="msa_select" style='display: none' onchange="fileManager.handleFileSelect(this)"></select>
+  <input id="view" type="button" onclick="fileManager.showSelectedFile(false)" class="submit inactive" value="&nbsp;VIEW&nbsp;" />
+  <input id='edit' type="button" onclick="fileManager.showSelectedFile(true)" class="submit inactive" value="&nbsp;EDIT&nbsp;" />
   <input id="minimize" type="button" style='display: none'
-	 onclick="fileManager.removeGapColumns();" class="submit active"
+	 onclick="executeOperation(removeGapColumnsForActive)" class="submit active"
 	 value="&nbsp;MINIMIZE&nbsp;" />
-  <input id="save" type="button" onclick="fileManager.saveFiles();" class="submit inactive" value="&nbsp;SAVE&nbsp;" />
-  <input id="undo_button" type="button" onclick="undoManager.undo();" class="submit inactive" value="&nbsp;UNDO&nbsp;" />
-  <input id="redo_button" type="button" onclick="undoManager.redo();" class="submit inactive" value="&nbsp;REDO&nbsp;" />
+  <input id="save" type="button" onclick="fileManager.saveFiles()" class="submit inactive" value="&nbsp;SAVE&nbsp;" />
+  <input id="undo_button" type="button" style='display: none' onclick="undoManager.undo();" class="submit active" value="&nbsp;UNDO&nbsp;" />
+  <input id="redo_button" type="button" style='display: none' onclick="undoManager.redo();" class="submit active" value="&nbsp;REDO&nbsp;" />
 
   <br><br>
-  <div id="msa" >
-    <table id="msa_table">
-      <thead id="msa_head"></thead>
-      <tbody id="msa_body"></tbody>
-      <tfoot id="msa_annotation"></tfoot>
-    </table>
-  </div>
-  
-<script type="text/javascript">
-var undoManager = new UndoManager();  
-
-/* define key bindings */
-Mousetrap.bind('shift+v',function(){showMSA(false);});
-Mousetrap.bind('shift+e',function(){showMSA(true);});
-Mousetrap.bind('shift+r',function(){normalizeMSA();});
-Mousetrap.bind('shift+s',function(){exportFile();});
-Mousetrap.bind('shift+left',function(){undoManager.undo();});
-Mousetrap.bind('shift+right',function(){undoManager.redo();});
-
-//Mousetrap.bind('keyleft',function(){updateManager.undo();});
-//Mousetrap.bind('keyright',function(){updateManager.redo();});
-
-</script>
+  <table id="msa_table">
+    <thead id="msa_head"></thead>
+    <tbody id="msa_body"></tbody>
+    <tfoot id="msa_annotation"></tfoot>
+  </table>
   </body>
 </html>
