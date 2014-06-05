@@ -8,145 +8,21 @@ function editDistSimple()
     document.getElementById('output').innerHTML = '';
     return;
   }
-
-  var alen = stringA.length;
-  var blen = stringB.length;
-
-  var matrix = [];
-  for(var i=0;i<alen+1;i++)
-  {
-    var inline = [];
-    for(var j=0;j<blen+1;j++)
-    {
-      inline.push(0);
-    }
-    matrix.push(inline);
-  }
   
-  
-  // initialize matrix
-  for(i=1;i<blen+1;i++)
+  if(stringA.indexOf(' ') != -1 || stringB.indexOf(' ') != -1)
   {
-    matrix[0][i] = i;
+    var seqA = stringA.split(' ');
+    var seqB = stringB.split(' ');
+
+    var alignments = editList(seqA,seqB);
   }
-  for(i=1;i<alen+1;i++)
+  else
   {
-    matrix[i][0] = i;
+    var alignments = editDist(stringA,stringB);
   }
-
-  var traceback = [];
-  for(var i=0;i<alen+1;i++)
-  {
-    var inline = [];
-    for(var j=0;j<blen+1;j++)
-    {
-      inline.push(0);
-    }
-    traceback.push(inline);
-  }
-  
-
-  // initialize traceback
-  for(i=1;i<blen+1;i++)
-  {
-    traceback[0][i] = 2;
-  }
-  for(i=1;i<alen+1;i++)
-  {
-    traceback[i][0] = 1;
-  }
-
-  var db = document.getElementById('db');
-  db.innerHTML = '';
-
-  // iterate
-  for(i=1;i<alen+1;i++)
-  {
-    for(j=1;j<blen+1;j++)
-    {
-      var a = stringA.slice(i-1,i);
-      var b = stringB.slice(j-1,j);
-      
-      if(a == b)
-      {
-        var dist = matrix[i-1][j-1];
-      }
-      else
-      {
-        var dist = matrix[i-1][j-1]+1;
-      }
-      
-      var gapA = matrix[i-1][j]+1;
-      var gapB = matrix[i][j-1]+1;
-
-      if(dist < gapA && dist < gapB)
-      {
-        matrix[i][j] = dist;
-      }
-      else if(gapA < gapB)
-      {
-        matrix[i][j] = gapA ;
-        traceback[i][j] = 1;
-      }
-      else
-      {
-        matrix[i][j] = gapB;
-        traceback[i][j] = 2;
-      }
-      
-      // debug
-      db.innerHTML += matrix[i][j] + ' ';
-    }
-    db.innerHTML += "<br>";
-  }
-  
-  // no other stupid language needs this line apart from JS!!!
-  var i = matrix.length-1;
-  var j = matrix[0].length-1;
-
-  db.innerHTML += i+' '+j+"<br>";
-
-  // get edit-dist
-  var ED = matrix[i][j];
-
-  // get the alignment //
-  var almA = [];
-  var almB = [];
-
-  while(i > 0 || j > 0)
-  {
-    if(traceback[i][j] == 0)
-    {
-      almA.push(stringA.slice(i-1,i));
-      almB.push(stringB.slice(j-1,j));
-      i--;
-      j--
-    }
-    else if(traceback[i][j] == 1)
-    {
-      almA.push(stringA.slice(i-1,i));
-      almB.push("-");
-      i--;
-    }
-    else
-    {
-      almA.push("-");
-      almB.push(stringB.slice(j-1,j));
-      j--
-    }   
-  }
-  
-  /* reverse alignments */
-  almA = almA.reverse();
-  almB = almB.reverse();
-
-  var db = document.getElementById('db');
-  db.innerHTML += "<pre><code>"
-  for(i in traceback)
-  {
-    db.innerHTML += traceback[i].join("\t")+"<br>";
-  }
-  db.innerHTML += "</code></pre>";
+  var almA = alignments[0];
+  var almB = alignments[1];
+  var ED = alignments[2];
   
   /* get index for identical elements */
   var almas = '';
@@ -182,8 +58,6 @@ function editDistSimple()
   output += "</table>";
 
   document.getElementById('output').innerHTML = output; 
-  
-   
 }
 
 
@@ -336,7 +210,7 @@ function editAll()
   var stringsB = [];
   for(i=0;i<stringsAtmp.length;i++)
   {
-    var tmp = stringsAtmp[i].replace(/\s+/,'');
+    var tmp = stringsAtmp[i].replace(/\s+/,' ');
     if(tmp != '')
     {
       stringsA.push(tmp);
@@ -344,7 +218,7 @@ function editAll()
   }
   for(i=0;i<stringsBtmp.length;i++)
   {
-    var tmp = stringsBtmp[i].replace(/\s+/,'');
+    var tmp = stringsBtmp[i].replace(/\s+/,' ');
     if(tmp != '')
     {
       stringsB.push(tmp);
@@ -373,7 +247,19 @@ function editAll()
     var stringA = stringsA[i];
     var stringB = stringsB[i];
 
-    var alms = editDist(stringA,stringB);
+    if(stringA.indexOf(' ') != -1 || stringB.indexOf(' ') != -1)
+    {
+      var seqA = stringA.split(' ');
+      var seqB = stringB.split(' ');
+
+      var alms = editList(seqA,seqB);
+    }
+    else
+    {
+      var alms = editDist(stringA,stringB);
+    }
+
+    //var alms = editDist(stringA,stringB);
     var almA = alms[0];
     var almB = alms[1];
     var dist = alms[2];
@@ -438,4 +324,141 @@ function saveAlms()
 
 
 
+function editList(seqA,seqB)
+{
 
+  if(seqA.length == 0 || seqB.length == 0)
+  {
+    return;
+  }
+
+  var alen = seqA.length;
+  var blen = seqB.length;
+
+  var matrix = [];
+  for(var i=0;i<alen+1;i++)
+  {
+    var inline = [];
+    for(var j=0;j<blen+1;j++)
+    {
+      inline.push(0);
+    }
+    matrix.push(inline);
+  }
+  
+  // initialize matrix
+  for(i=1;i<blen+1;i++)
+  {
+    matrix[0][i] = i;
+  }
+  for(i=1;i<alen+1;i++)
+  {
+    matrix[i][0] = i;
+  }
+
+  var traceback = [];
+  for(var i=0;i<alen+1;i++)
+  {
+    var inline = [];
+    for(var j=0;j<blen+1;j++)
+    {
+      inline.push(0);
+    }
+    traceback.push(inline);
+  }
+  
+
+  // initialize traceback
+  for(i=1;i<blen+1;i++)
+  {
+    traceback[0][i] = 2;
+  }
+  for(i=1;i<alen+1;i++)
+  {
+    traceback[i][0] = 1;
+  }
+
+  var db = document.getElementById('db');
+  db.innerHTML = '';
+
+  // iterate
+  for(i=1;i<alen+1;i++)
+  {
+    for(j=1;j<blen+1;j++)
+    {
+      var a = seqA[i-1];
+      var b = seqB[j-1];
+      
+      if(a == b)
+      {
+        var dist = matrix[i-1][j-1];
+      }
+      else if(a.indexOf(b.slice(0,1)) != -1 || b.indexOf(a.slice(0,1)) != -1)
+      {
+        var dist = matrix[i-1][j-1]+0.5;
+      }
+      else
+      {
+        var dist = matrix[i-1][j-1]+1;
+      }
+      
+      var gapA = matrix[i-1][j]+1;
+      var gapB = matrix[i][j-1]+1;
+
+      if(dist < gapA && dist < gapB)
+      {
+        matrix[i][j] = dist;
+      }
+      else if(gapA < gapB)
+      {
+        matrix[i][j] = gapA ;
+        traceback[i][j] = 1;
+      }
+      else
+      {
+        matrix[i][j] = gapB;
+        traceback[i][j] = 2;
+      }
+      
+    }
+  }
+  
+  // no other stupid language needs this line apart from JS!!!
+  var i = matrix.length-1;
+  var j = matrix[0].length-1;
+
+  // get edit-dist
+  var ED = matrix[i][j];
+
+  // get the alignment //
+  var almA = [];
+  var almB = [];
+
+  while(i > 0 || j > 0)
+  {
+    if(traceback[i][j] == 0)
+    {
+      almA.push(seqA[i-1]);
+      almB.push(seqB[j-1]);
+      i--;
+      j--
+    }
+    else if(traceback[i][j] == 1)
+    {
+      almA.push(seqA[i-1]);
+      almB.push("-");
+      i--;
+    }
+    else
+    {
+      almA.push("-");
+      almB.push(seqB[j-1]);
+      j--
+    }   
+  }
+  
+  /* reverse alignments */
+  almA = almA.reverse();
+  almB = almB.reverse();
+  return [almA,almB,ED];
+}

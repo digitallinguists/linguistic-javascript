@@ -1,7 +1,7 @@
 <html>
   <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
-    <script type="text/javascript" src="https://raw.githubusercontent.com/eligrey/FileSaver.js/master/FileSaver.js"></script>
+    <script type="text/javascript" src="js/filesaver.js"></script>
     <script type="text/javascript" src="js/edit.js"></script>
 <style>
 #db{display:none;}
@@ -61,14 +61,15 @@ td.mismatch{
   <div id="db"></div>
   <br>
   <h3>Align multiple word pairs</h3>
-  Inser multiple words in both text fields, align the words and export the alignments to a separate file.<br><br>
+  Insert multiple words in both text fields, align the words and export the alignments to a separate file.<br><br>
   <textarea id="stringsA" rows="30" cols="30" placeholder="words of one language">hant
 maus
 fūs
-</textarea>
+k y k ə n</textarea>
   <textarea id="stringsB" rows="30" cols="30" placeholder="words of other language">hænd
 mauz
-fut</textarea>
+fut
+tʃ ɪ k ə n</textarea>
 <div id="buttons">
   <input type="button" id="button1" value="SUBMIT" onclick="editAll();" />
   <input type="button" id="button1" value="EXPORT" onclick="saveAlms();" /></div>
