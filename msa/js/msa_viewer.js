@@ -770,7 +770,7 @@ function moveSelectionLeft(msa_file, selection) {
             rows[run_y].alignment.splice(selection.lr.x + 1, 0, '-');
     }
 
-    var found_empty_row = false;
+    var found_empty_col = false;
     column_loop:
     for (var run_x = selection.ul.x - 1; run_x >= 0; run_x--) {
         for (var run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
@@ -778,10 +778,10 @@ function moveSelectionLeft(msa_file, selection) {
                 continue column_loop;
             }
         }
-        found_empty_row = true;
+        found_empty_col = true;
         break;
     }
-    if (found_empty_row) {
+    if (found_empty_col) {
         for(run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
             rows[run_y].alignment.splice(run_x, 1);
         }
@@ -799,18 +799,18 @@ function moveSelectionRight(msa_file, selection) {
         rows[run_y].alignment.splice(selection.ul.x, 0, '-');
     }
 
-    var found_empty_row = false;
+    var found_empty_col = false;
     column_loop:
-    for (var run_x = selection.lr.x+1; run_x < msa_file.width + 1; run_x++) {
+    for (var run_x = selection.lr.x+2; run_x < msa_file.width + 1; run_x++) {
         for (var run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
             if (rows[run_y].alignment[run_x] !== '-') {
                 continue column_loop;
             }
         }
-        found_empty_row = true;
+        found_empty_col = true;
         break;
     }
-    if (found_empty_row) {
+    if (found_empty_col) {
         for(run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
             rows[run_y].alignment.splice(run_x, 1);
         }
