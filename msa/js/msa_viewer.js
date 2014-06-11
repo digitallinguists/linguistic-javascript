@@ -173,7 +173,7 @@ function parseMSA(msa_file) {
     var lines = text.split(/\r\n|\n/);
 
     for (var i = 0; i < lines.length; i++) {
-        var line = lines[i];
+        var line = lines[i].trim();
         var start = line[0];
         if (start === '#' || start === ':') {
             continue;
@@ -214,7 +214,8 @@ function parseMSA(msa_file) {
         }
     }
 
-    msa_file.rows.sort(function(a,b) { return a.taxon.localeCompare(b.taxon); })
+    msa_file.rows.sort(function(a,b) { return a.taxon.localeCompare(b.taxon); });
+    normalizeMsa(msa_file, 'right');
 
     //search duplicates
     var seen = {};
