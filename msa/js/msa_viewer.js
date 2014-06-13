@@ -6,6 +6,7 @@ var MSAFile = function() {
     this.meta_information = {}; //lines of the form "@<key>:<value>"
     this.dataset = undefined; //header entry
     this.alignment = undefined; //header entry
+    this.lines = []; //parsed file: mix of comment lines and rows
     this.rows = []; //alignments
     this.unique_rows = [];
     this.ans = []; //special rows as defined through keywords
@@ -27,6 +28,24 @@ var MSARow = function() {
                         //shared reference to another row alignment
 }
 
+MSARow.prototype.exportRow = function (msa_file) {
+    var result = '';
+    var row_start = [];
+    if (msa_file.type == 'with_id') {
+        row_start.push(this.id);
+    }
+    row_start.push(this.fillTaxonWithDots(msa_file.taxlen));
+    result += row_start.join('\t') + '\t' + this.alignment.join('\t') + '\n'
+    return result;
+}
+
+// pad the taxon with dots to a specific length
+MSARow.prototype.fillTaxonWithDots = function (name, len) {
+    var dots = '.......................................';
+    return this.taxon + dots.substring(0, len - this.taxon.length);
+}
+
+
 var fileManager = (function () {
     var MSAFiles = undefined;
     var active_idx = -1; //-1 means no valid selection
@@ -39,19 +58,22 @@ var fileManager = (function () {
     }
 
     function exportFile(msa_file) {
+
         var data = '';
+        /*
         msa_file.meta_information.modified = getDate();
         for (key in msa_file.meta_information) {
             data += '@' + key + ': ' + msa_file.meta_information[key] + '\n';
         }
-        for(var i=0; i<msa_file.rows.length; i++) {
-            var row = msa_file.rows[i];
-            var row_start = [];
-            if (msa_file.type == 'with_id') {
-                row_start.push(row.id);
+        */
+        for(var i=0; i<msa_file.lines.length; i++) {
+            var line = msa_file.lines[i];
+            if (line instanceof MSARow) {
+                data += line.exportRow(msa_file);
             }
-            row_start.push(fillWithDots(row.taxon, msa_file.taxlen));
-            data += row_start.join('\t') + '\t' + row.alignment.join('\t') + '\n'
+            else {
+                data += line;
+            }
         }
         var blob = new Blob([data], {
             type: "text/plain;charset=utf-8"
@@ -169,9 +191,11 @@ function parseMSA(msa_file) {
         var line = lines[i].trim();
         var start = line[0];
         if (start === '#' || start === ':') {
+            msa_file.lines.push(line + '\n');
             continue;
         }
         if (start == '@') {
+            msa_file.lines.push(line + '\n');
             keyval = lines[i].split(':');
             key = keyval[0].trim().slice(1);
             val = keyval[1].trim();
@@ -184,9 +208,11 @@ function parseMSA(msa_file) {
                 } else if ( i === 1 ) {
                     msa_file.alignment = line
                 }
+                msa_file.lines.push(line + '\n');
                 continue;
             }
             var row = new MSARow();
+            msa_file.lines.push(row);
             if (! isNaN(parts[0])) { //id as first row entry
                 row.id = parseInt(parts.shift());
                 msa_file.type = 'with_id';
@@ -889,12 +915,6 @@ function splitString(s) {
         }
     }
     return result;
-}
-
-// pad a string with dots to a specific length
-function fillWithDots(name, len) {
-    var dots = '.......................................';
-    return name + dots.substring(0, len - name.length);
 }
 
 window.onload = function() {
