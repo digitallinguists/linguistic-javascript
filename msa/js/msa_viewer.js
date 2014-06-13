@@ -7,9 +7,9 @@ var MSAFile = function() {
     this.dataset = undefined; //header entry
     this.alignment = undefined; //header entry
     this.rows = []; //alignments
+    this.unique_rows = [];
     this.ans = []; //special rows as defined through keywords
     this.width = 0; //width of the alignment table without the taxon
-    this.unique_count = 0; //number of unique rows
     this.type = 'basic'; //or 'with_id'
     this.taxlen = 0; //max length of taxa
     this.filename = undefined;
@@ -105,7 +105,7 @@ var fileManager = (function () {
         },
 
         showSelectedFile: function(unique){
-	    if (unique === edit_mode) return; // no op
+            if (unique === edit_mode) return; // no op
             showMSA(MSAFiles[active_idx], unique);
             setEditMode(unique);
             if (unique) undoManager.clear();
@@ -215,7 +215,6 @@ function parseMSA(msa_file) {
     }
 
     msa_file.rows.sort(function(a,b) { return a.taxon.localeCompare(b.taxon); });
-    normalizeMsa(msa_file, 'right');
 
     //search duplicates
     var seen = {};
@@ -227,10 +226,12 @@ function parseMSA(msa_file) {
             row.alignment = undefined;
             row.reference_idx = seen[word];
         } else {
+            msa_file.unique_rows.push(row)
             seen[word] = i;
-            msa_file.unique_count++;
         }
     }
+
+    normalizeMsa(msa_file, 'right');
     msa_file.status.parsed = true;
 }
 
@@ -260,7 +261,7 @@ function syncMsaToDom(msa_file) {
 
     var rows;
     if (msa_file.status.mode == 'edit') {
-        rows = msa_file.rows.filter(function(elem) { return elem.unique });
+        rows = msa_file.unique_rows;
     } else {
         rows = msa_file.rows;
     }
@@ -347,7 +348,7 @@ function showMSA(msa_file, edit_mode) {
     var rows;
     var css_class;
     if (edit_mode) {
-        rows = msa_file.rows.filter(function(elem) { return elem.unique });
+        rows = msa_file.unique_rows;
         msa_file.status.mode = 'edit';
         css_class = 'residue ';
     } else {
@@ -529,8 +530,8 @@ var tableSelection = (function () {
         if (nx < 1) nx = msa_file.width;
         else if (nx > msa_file.width) nx = 1;
 
-        if (ny < 0) ny = msa_file.unique_count - 1;
-        else if (ny >= msa_file.unique_count) ny = 0;
+        if (ny < 0) ny = msa_file.unique_rows.length - 1;
+        else if (ny >= msa_file.unique_rows.length) ny = 0;
 
         var node = getCellInTable(nx,ny);
         if (node === undefined) return;
@@ -549,16 +550,16 @@ var tableSelection = (function () {
             if (active === undefined || active.tagName !== "TD")
                 return undefined;
             var position = getPositionInTable(active);
-	    if (event.keyCode === 86) { //v iew
-		fileManager.showSelectedFile(false)
-	    } else if (event.keyCode === 85) { //u ndo
-		undoManager.undo();
-	    } else if (event.keyCode === 82) { //r edo
-		undoManager.redo();
-	    } else if (event.keyCode === 83) { //s ave
-		fileManager.saveFiles();
-	    } else if (event.keyCode === 77) { //m inimize
-		executeOperation(removeGapColumnsForActive);
+            if (event.keyCode === 86) { //v iew
+                fileManager.showSelectedFile(false)
+            } else if (event.keyCode === 85) { //u ndo
+                undoManager.undo();
+            } else if (event.keyCode === 82) { //r edo
+                undoManager.redo();
+            } else if (event.keyCode === 83) { //s ave
+                fileManager.saveFiles();
+            } else if (event.keyCode === 77) { //m inimize
+                executeOperation(removeGapColumnsForActive);
             } else if (event.keyCode === 13) {
                 if (event.shiftKey) {
                     if (event.ctrlKey || event.metaKey) {
@@ -638,7 +639,7 @@ var tableSelection = (function () {
 
         clearSelection: clearSelection,
         
-	markSelection: markSelection,
+        markSelection: markSelection,
 
         fixSelection: fixSelection,
 
@@ -650,7 +651,7 @@ var tableSelection = (function () {
             var msa_file = fileManager.activeFile();
             if(msa_file === undefined || 
                0 > ul.x + dx || lr.x+dx > msa_file.width ||
-               0 > ul.y + dy || lr.y+dy > msa_file.unique_count) {
+               0 > ul.y + dy || lr.y+dy > msa_file.unique_rows.length) {
                 return;
             }
 
@@ -687,15 +688,15 @@ function captureCurrentState() {
 
 function getAlignmentState(msa_file) {
     var result = [];
-    for (var i = 0; i < msa_file.rows.length; i++) {
-        var row = msa_file.rows[i];
-        if (row.unique) result.push(row.alignment.slice(0));
+    for (var i = 0; i < msa_file.unique_rows.length; i++) {
+        var row = msa_file.unique_rows[i];
+        result.push(row.alignment.slice(0));
     }
     return result;
 }
 
 function setAlignmentState(msa_file, alignments) {
-    var rows = msa_file.rows.filter(function(elem) { return elem.unique });
+    var rows = msa_file.unique_rows;
     for (var i = 0; i < rows.length; i++) {
         rows[i].alignment = alignments[i].slice(0);
     }
@@ -714,17 +715,17 @@ function executeOperation(func) {
     tableSelection.markSelection();
     undoManager.add({ undo: undoFunc,
                       redo: function() {
-			  tableSelection.clearSelection();
-			  tableSelection.setSelection(selection);
-			  func(msa_file, selection);
-			  syncMsaToDom(msa_file);
-			  tableSelection.markSelection();
-		      }
-		    });
+                          tableSelection.clearSelection();
+                          tableSelection.setSelection(selection);
+                          func(msa_file, selection);
+                          syncMsaToDom(msa_file);
+                          tableSelection.markSelection();
+                      }
+                    });
 }
 
 function splitSelectionAndFill(msa_file, selection, filling_from) {
-    var rows = msa_file.rows.filter(function(elem) { return elem.unique });
+    var rows = msa_file.unique_rows;
     for (var y = selection.ul.y; y <= selection.lr.y; y++) {
         var splice_args = [selection.ul.x, selection.lr.x-selection.ul.x+1];
         for (var x = selection.ul.x; x <= selection.lr.x; x++) {
@@ -737,7 +738,7 @@ function splitSelectionAndFill(msa_file, selection, filling_from) {
 }
 
 function mergeSelectionAndFill(msa_file, selection, filling_from) {
-    var rows = msa_file.rows.filter(function(elem) { return elem.unique });
+    var rows = msa_file.unique_rows;
     for (var y = selection.ul.y; y <= selection.lr.y; y++) {
         var repl = ''
         for (var x = selection.ul.x; x <= selection.lr.x; x++) {
@@ -753,7 +754,7 @@ function mergeSelectionAndFill(msa_file, selection, filling_from) {
 }
 
 function deleteSelectionAndFill(msa_file, selection, filling_from) {
-    var rows = msa_file.rows.filter(function(elem) { return elem.unique });
+    var rows = msa_file.unique_rows;
     var count = selection.lr.x-selection.ul.x+1;
     for (var y=selection.ul.y; y<=selection.lr.y; y++) {
         rows[y].alignment.splice(selection.ul.x, count);
@@ -763,7 +764,7 @@ function deleteSelectionAndFill(msa_file, selection, filling_from) {
 }
 
 function moveSelectionLeft(msa_file, selection) {
-    var rows = msa_file.rows.filter(function(elem) { return elem.unique });
+    var rows = msa_file.unique_rows;
     for(run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
             rows[run_y].alignment.splice(selection.lr.x + 1, 0, '-');
     }
@@ -791,7 +792,7 @@ function moveSelectionLeft(msa_file, selection) {
 }
 
 function moveSelectionRight(msa_file, selection) {
-    var rows = msa_file.rows.filter(function(elem) { return elem.unique });
+    var rows = msa_file.unique_rows;
 
     for(run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
         rows[run_y].alignment.splice(selection.ul.x, 0, '-');
@@ -824,22 +825,18 @@ function normalizeMsa(msa_file, filling_from){
     }
     //make alignments a square_matrix
     max = 0;
-    for (var i=0; i< msa_file.rows.length; i++) {
-        var row = msa_file.rows[i];
-        if (row.unique) {
-            max = Math.max(max, row.alignment.length);
-        }
+    for (var i=0; i< msa_file.unique_rows.length; i++) {
+        var row = msa_file.unique_rows[i];
+        max = Math.max(max, row.alignment.length);
     }
     msa_file.width = max;
-    for (i=0; i< msa_file.rows.length; i++) {
-        row = msa_file.rows[i];
-        if (row.unique) {
-            while (row.alignment.length < max) {
-                if (filling_from == 'right') {
-                    row.alignment.push('-');
-                } else {
-                    row.alignment.splice(0,0,'-');
-                }
+    for (i=0; i< msa_file.unique_rows.length; i++) {
+        row = msa_file.unique_rows[i];
+        while (row.alignment.length < max) {
+            if (filling_from == 'right') {
+                row.alignment.push('-');
+            } else {
+                row.alignment.splice(0,0,'-');
             }
         }
     }
@@ -857,20 +854,18 @@ function removeGapColumns(msa_file) {
     //remove columns containing only gaps
     for (var x=msa_file.width-1; x>=0; x--) {
         var only_gaps = true;
-        for(i=0; i < msa_file.rows.length; i++) {
-            var row = msa_file.rows[i];
-            if (row.unique && row.alignment[x].trim() !== '-') {
+        for(i=0; i < msa_file.unique_rows.length; i++) {
+            var row = msa_file.unique_rows[i];
+            if (row.alignment[x].trim() !== '-') {
                 only_gaps = false;
                 break
             }
         }
         if (!only_gaps) continue;
         msa_file.width -= 1;
-        for(i=0; i< msa_file.rows.length; i++) {
-            row = msa_file.rows[i];
-            if (row.unique) {
-                row.alignment.splice(x,1);
-            }
+        for(i=0; i< msa_file.unique_rows.length; i++) {
+            row = msa_file.unique_rows[i];
+            row.alignment.splice(x,1);
         }
     }
 }
