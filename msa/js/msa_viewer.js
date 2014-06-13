@@ -22,10 +22,9 @@ var MSAFile = function() {
 var MSARow = function() {
     this.id = undefined;
     this.taxon = undefined;
-    this.alignment = [];
-    this.unique = true; //if unique === true then alignment contains valid data, else reference_idx indicates
-                        //another row with the same alignment
-    this.reference_idx = undefined;
+    this.alignment = []; //always modify in place to keep references valid
+    this.unique = true; //if unique === true then alignment contains original data, else alignment is a
+                        //shared reference to another row alignment
 }
 
 var fileManager = (function () {
@@ -47,18 +46,12 @@ var fileManager = (function () {
         }
         for(var i=0; i<msa_file.rows.length; i++) {
             var row = msa_file.rows[i];
-            var alignment;
-            if (row.unique){
-                alignment = row.alignment;
-            } else {
-                alignment = msa_file.rows[row.reference_idx].alignment;
-            }
             var row_start = [];
             if (msa_file.type == 'with_id') {
                 row_start.push(row.id);
             }
             row_start.push(fillWithDots(row.taxon, msa_file.taxlen));
-            data += row_start.join('\t') + '\t' + alignment.join('\t') + '\n'
+            data += row_start.join('\t') + '\t' + row.alignment.join('\t') + '\n'
         }
         var blob = new Blob([data], {
             type: "text/plain;charset=utf-8"
@@ -210,7 +203,7 @@ function parseMSA(msa_file) {
             msa_file.rows.push(row);
             msa_file.taxlen = Math.max(msa_file.taxlen, row_header.length);
             msa_file.width = Math.max(msa_file.width, row.alignment.length);
-            
+
         }
     }
 
@@ -223,11 +216,10 @@ function parseMSA(msa_file) {
         var word = row.alignment.join('').replace(/-/g, '');
         if (word in seen) {
             row.unique = false;
-            row.alignment = undefined;
-            row.reference_idx = seen[word];
+            row.alignment = seen[word];
         } else {
             msa_file.unique_rows.push(row)
-            seen[word] = i;
+            seen[word] = row.alignment;
         }
     }
 
@@ -282,14 +274,8 @@ function syncMsaToDom(msa_file) {
     var tab_index = 1;
     for(var row_idx=0; row_idx < rows.length; row_idx++) {
         var row = rows[row_idx]
-        var alignment;
+        var alignment = row.alignment;
         var table_row = tbody.children[row_idx]
-        
-        if (row.unique) {
-            alignment = row.alignment;
-        } else {
-            alignment = msa_file.rows[row.reference_idx].alignment;
-        }
         
         //sync cell count
         while(alignment.length+1 > table_row.children.length) {
@@ -360,12 +346,7 @@ function showMSA(msa_file, edit_mode) {
     var tabindex = 1;
     for (var row_idx = 0; row_idx < rows.length; row_idx++) {
         var row = rows[row_idx];
-        var alignment
-        if (row.unique) {
-            alignment = row.alignment
-        } else {
-            alignment = msa_file.rows[row.reference_idx].alignment;
-        }
+        var alignment = row.alignment;
         text += '<tr class="alm_row"><td class="taxon">' + row.taxon + '</td>';
         for (var col_idx = 0; col_idx < alignment.length; col_idx++) {
             var cell = alignment[col_idx];
@@ -698,7 +679,10 @@ function getAlignmentState(msa_file) {
 function setAlignmentState(msa_file, alignments) {
     var rows = msa_file.unique_rows;
     for (var i = 0; i < rows.length; i++) {
-        rows[i].alignment = alignments[i].slice(0);
+        //modify alignment in place to keep referencing rows in sync with change
+        var splice_args = [0, rows[i].alignment.length];
+        Array.prototype.push.apply(splice_args, alignments[i]);
+        Array.prototype.splice.apply(rows[i].alignment, splice_args);
     }
     msa_file.width = rows[0].alignment.length;
 }
