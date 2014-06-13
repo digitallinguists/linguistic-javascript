@@ -772,18 +772,24 @@ function splitSelectionAndFill(msa_file, selection, filling_from) {
 
 function mergeSelectionAndFill(msa_file, selection, filling_from) {
     var rows = msa_file.unique_rows;
+    var fill_position = (filling_from == 'left' && selection.ul.x || selection.ul.x+1);
+    var filler_args = [fill_position, 0];
+    for (var i = selection.ul.x; i < selection.lr.x; i++) {
+        filler_args.push('-');
+    }
+
     for (var y = selection.ul.y; y <= selection.lr.y; y++) {
-        var repl = ''
+        var repl = '';
         for (var x = selection.ul.x; x <= selection.lr.x; x++) {
             if (rows[y].alignment[x] != '-' && rows[y].alignment[x] != '?') {
                 repl += rows[y].alignment[x];
             }
         }
         if (repl === '') repl = '-';
-        rows[y].alignment.splice(selection.ul.x, selection.lr.x-selection.ul.x+1, repl)
+        rows[y].alignment.splice(selection.ul.x, selection.lr.x-selection.ul.x+1, repl);
+        Array.prototype.splice.apply(rows[y].alignment, filler_args);
     }
     msa_file.status.edited = true;
-    normalizeMsa(msa_file, filling_from);
 }
 
 function deleteSelectionAndFill(msa_file, selection, filling_from) {
