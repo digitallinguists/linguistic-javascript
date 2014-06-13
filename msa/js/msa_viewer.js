@@ -505,12 +505,9 @@ var tableSelection = (function () {
         var msa_file = fileManager.activeFile();
         if (msa_file === undefined) return;
 
-        //wrap around in x and y direction
+        //wrap around in x direction
         if (x < 1) x = msa_file.width;
         else if (x > msa_file.width) x = 1;
-
-        if (y < 0) y = msa_file.unique_count - 1;
-        else if (y >= msa_file.unique_count) y = 0
 
         var node = getCellInTable(x,y);
         if (node === undefined) return;
