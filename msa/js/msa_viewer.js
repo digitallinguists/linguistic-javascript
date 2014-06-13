@@ -47,6 +47,7 @@ MSARow.prototype.fillTaxonWithDots = function (name, len) {
 
 
 var fileManager = (function () {
+    var fileHandles = undefined;
     var MSAFiles = undefined;
     var active_idx = -1; //-1 means no valid selection
     var edit_mode = false;
@@ -82,16 +83,14 @@ var fileManager = (function () {
     }
 
     return {
-        handleFiles: function (fileHandles) { //user selected new set of files
+        handleFiles: function (_fileHandles) { //user selected new set of files
+            fileHandles = _fileHandles;
             //clear drop down list
             var elem = document.getElementById('msa_select');
             while (elem.firstChild) {
                 elem.removeChild(elem.firstChild);
             }
-            var option = document.createElement('option');
-            option.value = -1;
-            option.innerHTML = "- Select a file to display -";
-            elem.appendChild(option);
+            active_idx = -1
             MSAFiles = [];
             //create an MSAFile for every selected file
             for (var i = 0; i < fileHandles.length; i++) {
@@ -110,10 +109,25 @@ var fileManager = (function () {
             }
         },
 
+        reload: function() {
+            if (fileHandles === undefined || active_idx === undefined) return;
+            var handle = fileHandles[active_idx];
+            var msa = new MSAFile();
+            MSAFiles[active_idx] = msa;
+            var reader = new FileReader();
+            reader.onload = function (msa_obj) {
+                return function (event) {
+                    msa_obj.filecontent = event.target.result;
+                    var elem = document.getElementById('msa_select');
+                    elem.onchange(elem);
+                };
+            }(msa);
+            reader.readAsText(handle);
+        },
+
         handleFileSelect: function (event) {
             //user selects a msa file from drop down list
             var selected_idx = parseInt(event.value);
-            if (selected_idx < 0) return; //dummy value selected
             active_idx = selected_idx;
             showMSA(MSAFiles[selected_idx], false);
             setEditMode(false);
@@ -138,7 +152,12 @@ var fileManager = (function () {
             elem.style.display = 'inline';
             document.getElementById('view').className = "submit active";
             document.getElementById('edit').className = "submit active";
+            document.getElementById('reload').className = "submit active";
             document.getElementById('save').className = "submit active";
+            if (active_idx === -1) {
+                elem.value = index;
+                elem.onchange(elem);
+            }
         },
 
         saveFiles: function() {
