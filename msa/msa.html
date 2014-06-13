@@ -2,9 +2,11 @@
   <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
 
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css" type="text/css">
     <link rel="stylesheet" href="css/msa.css" type="text/css">
 
-    <script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.1.js"></script>
+    <script type="text/javascript" src="http://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
     <script type="text/javascript" src="https://raw.githubusercontent.com/eligrey/FileSaver.js/master/FileSaver.js"></script>
     <script type="text/javascript" src="js/undomanager.js"></script>
     <script type="text/javascript" src="js/msa_data.js"></script>
@@ -21,7 +23,7 @@
   <input id="view" type="button" onclick="fileManager.showSelectedFile(false)" class="submit inactive" value="&nbsp;VIEW&nbsp;" />
   <input id='edit' type="button" onclick="fileManager.showSelectedFile(true)" class="submit inactive" value="&nbsp;EDIT&nbsp;" />
   <input id="reload" type="button"
-	 onclick="fileManager.reload()" class="submit inactive"
+	 onclick="fileManager.reload(true)" class="submit inactive"
 	 value="&nbsp;RELOAD&nbsp;" />
   <input id="minimize" type="button"
 	 onclick="executeOperation(removeGapColumnsForActive)" class="submit inactive"
@@ -36,5 +38,10 @@
     <tbody id="msa_body"></tbody>
     <tfoot id="msa_annotation"></tfoot>
   </table>
+
+  <div id="reload_dialog" title="Reload MSA file?">
+    <p>There are unsaved changes to this file.<br>
+      Do you still want to reload the file?
+  </div>
   </body>
 </html>

@@ -133,3 +133,9 @@ td.dolgo_W{background-color: #c864c8;}
 td.dolgo_1{background-color: #c896af;} 
 td.dolgo_X{background-color: #cccccc;}
 td.dolgo_GAP{background-color: #cccccc;}
+        
+.ui-widget-overlay
+{
+    background: #000;
+    opacity: .6;
+}

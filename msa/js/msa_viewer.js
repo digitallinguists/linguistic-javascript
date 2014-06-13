@@ -109,8 +109,12 @@ var fileManager = (function () {
             }
         },
 
-        reload: function() {
+        reload: function(do_ask) {
             if (fileHandles === undefined || active_idx === undefined) return;
+            if (do_ask && MSAFiles[active_idx].status.edited) {
+                $("#reload_dialog").dialog("open");
+                return;
+            }
             var handle = fileHandles[active_idx];
             var msa = new MSAFile();
             MSAFiles[active_idx] = msa;
@@ -936,8 +940,27 @@ function splitString(s) {
     return result;
 }
 
+//initialisation
 window.onload = function() {
     undoManager = new UndoManager();
     undoManager.setCallback(undoManagerChanged);
     undoManagerChanged();
+
+    //prepare dialog
+    $("#reload_dialog").dialog({
+        autoOpen: false,
+        modal: true,
+        width: 400,
+        position: { my: "center top", at: "center bottom", of: $("#reload"), collision: "fit" },
+        buttons : {
+            "Proceed" : function() {
+                fileManager.reload(false);
+                $(this).dialog("close");
+            },
+            "Cancel" : function() {
+                $(this).dialog("close");
+            }
+        }
+    });
+
 }
