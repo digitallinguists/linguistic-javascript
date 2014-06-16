@@ -243,7 +243,10 @@ function parseMSA(msa_file) {
             
             var row_header = parts[0].replace(/\.*$/, '')
             row.taxon = row_header;
-            row.alignment = parts.slice(1).map(function(x){ return x.trim(); });
+            row.alignment = parts.slice(1).map(function(x){ 
+                x = x.trim();
+                return x === '' && '-' || x;
+            });
 
             if (row_header in keywords) {
                 msa_file.ans.push(row);
