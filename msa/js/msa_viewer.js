@@ -551,11 +551,7 @@ var tableSelection = (function () {
         node.focus()
     }
 
-    function extendSelection(x, y, nx, ny) {
-        if (ul.x === undefined || ul.y === undefined ||
-            lr.x === undefined || lr.y === undefined) {
-            startSelection(x, y);
-        }
+    function extendSelection(nx, ny) {
         var msa_file = fileManager.activeFile();
         if (msa_file === undefined) return;
 
@@ -633,9 +629,9 @@ var tableSelection = (function () {
                     ny++;
                 }
                 if (event.shiftKey) {
-                    extendSelection(position.x, position.y, nx,ny);
+                    extendSelection(nx, ny);
                 } else {
-                    startSelection(nx,ny);
+                    startSelection(nx, ny);
                 }
             }
             return false;
@@ -644,7 +640,11 @@ var tableSelection = (function () {
         mousedownHandler: function mousedownHandler(event) {
             var position = getPositionInTable(event.target);
             if (position === undefined) return;
-            startSelection(position.x, position.y);
+            if (event.shiftKey) {
+                extendSelection(position.x, position.y);
+            } else {
+                startSelection(position.x, position.y);
+            }
         },
 
         getSelection: function getSelection() {
