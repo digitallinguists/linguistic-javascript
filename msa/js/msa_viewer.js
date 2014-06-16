@@ -445,6 +445,7 @@ function showMSA(msa_file, edit_mode) {
     document.getElementById('view').disabled = !edit_mode;
     document.getElementById('edit').disabled = edit_mode;
     document.getElementById('minimize').style.display = (edit_mode && 'inline' || 'none');
+    if (edit_mode) tableSelection.initializeSelection();
 }
 
 var tableSelection = (function () {
@@ -533,6 +534,10 @@ var tableSelection = (function () {
         y = selectionStart.y === ul.y && lr.y || ul.y;
         node = getCellInTable(x, y);
         node === undefined || node.focus();
+    }
+
+    function initializeSelection() {
+        startSelection(1,0);
     }
 
     function startSelection(x,y) {
@@ -669,6 +674,8 @@ var tableSelection = (function () {
             selectionStart.x = selection.selectionStart.x+1;
             selectionStart.y = selection.selectionStart.y;
         },
+
+        initializeSelection: initializeSelection,
 
         clearSelection: clearSelection,
         
