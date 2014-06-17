@@ -334,6 +334,7 @@ function syncMsaToDom(msa_file) {
             var table_data = document.createElement('TD');
             table_data.classList.add('residue')
             table_data.onmousedown = tableSelection.mousedownHandler;
+            table_data.ondblclick = tableSelection.openEditDialog;
             table_data.appendChild(document.createTextNode(''));
             table_row.appendChild(table_data);
         }
@@ -439,9 +440,11 @@ function showMSA(msa_file, edit_mode) {
     $(document).off('keydown'); 
     if (msa_file.status.mode === 'edit') {
         $(document).keydown(tableSelection.keydownHandler);
+        $("TD").mousedown(tableSelection.mousedownHandler);
+        $("TD").dblclick(tableSelection.openEditDialog);
+    
     }
-    $("TD").mousedown(tableSelection.mousedownHandler);
-
+    
     document.getElementById('view').disabled = !edit_mode;
     document.getElementById('edit').disabled = edit_mode;
     document.getElementById('minimize').style.display = (edit_mode && 'inline' || 'none');
@@ -553,7 +556,8 @@ var tableSelection = (function () {
         clearSelection();
         selectionStart.x = ul.x = lr.x = x;
         selectionStart.y = ul.y = lr.y = y;
-        node.focus()
+        markSelection();
+        node.focus();
     }
 
     function extendSelection(nx, ny) {
@@ -701,6 +705,29 @@ var tableSelection = (function () {
             lr.y += dy;
             selectionStart.x += dx;
             selectionStart.y += dy;
+        },
+
+        openEditDialog: function(event) {
+            var position = getPositionInTable(event.target);
+            if (position === undefined) return;
+            var msa_file = fileManager.activeFile();
+            if (msa_file === undefined) return;
+            var cell_content = msa_file.unique_rows[position.y].alignment[position.x-1]
+            document.getElementById('cell_content').value = cell_content;
+            var elem = document.getElementById("cell_edit_dialog");
+            elem.event_target = event.target;
+            $(elem).dialog({position: { my: "center top", at: "center bottom", of: $(event.target), collision: "fit" }});
+            $(elem).dialog("open");
+        },
+
+        editActiveCell: function(cell, new_value) {
+            position = getPositionInTable(cell);
+            if (position === undefined) return;
+            var msa_file = fileManager.activeFile();
+            if (msa_file === undefined) return;
+            executeOperation(function(msa_file, selection) {
+                msa_file.unique_rows[position.y].alignment[position.x-1] = new_value;
+            });
         }
     };
 
@@ -962,7 +989,7 @@ window.onload = function() {
     undoManager.setCallback(undoManagerChanged);
     undoManagerChanged();
 
-    //prepare dialog
+    //prepare dialogs
     $("#reload_dialog").dialog({
         autoOpen: false,
         modal: true,
@@ -979,4 +1006,19 @@ window.onload = function() {
         }
     });
 
+    $( "#cell_edit_dialog" ).dialog({
+        autoOpen: false,
+        modal: true,
+        buttons: {
+            "Apply": function() {
+                $( this ).dialog( "close" );
+                tableSelection.editActiveCell(this.event_target, cell_content.value);
+
+            },
+            Cancel: function() {
+                $( this ).dialog( "close" );
+            }
+        },
+    });
+    
 }
