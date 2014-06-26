@@ -11,7 +11,7 @@ var BASICS = [
   ];
 
 var WLS = {};
-var CFG = {'preview':50};
+var CFG = {'preview':10};
 
 var db = document.getElementById('db');
 
@@ -228,6 +228,7 @@ function showWLS(start)
 
 }
 
+/* specific customized functions for adding a column to the wordlist */
 function addColumn(event)
 {
   var col = document.getElementById('add_column');
@@ -323,20 +324,57 @@ function addColumn(event)
   showWLS(1);
 }
 
+
 function editEntry(idx,jdx,from_idx,from_jdx)
 {
   var line = document.getElementById('L_'+idx);
+  
+  /* if line is undefined, check for next view */
+  if(line === null)
+  {
+    if(idx > from_idx)
+    {
+      var next = document.getElementById('next');
+      var to_idx = parseInt(next.value.split('-')[0]);
+      showWLS(to_idx);
+      editEntry(idx,jdx,from_idx,from_jdx);
+      return;
+    }
+    else if(idx < from_idx)
+    {
+      var previous = document.getElementById('previous');
+      var to_idx = parseInt(previous.value.split('-')[0]);
+      showWLS(to_idx);
+      editEntry(idx,jdx,from_idx,from_jdx);
+      return;
+    }
+    else
+    {
+      return;
+    }
+  }
+
   var db = document.getElementById('db');
   var entry = line.childNodes[jdx];
 
+  $('#db').html(WLS['header'].length);
 
-  if(typeof entry == 'undefined')
+  if(jdx < 1 || jdx - 1 == WLS["header"].length)
   {
-    return
-  }
-  else if(jdx < 1 || jdx - 1 == WLS["header"].length)
-  {
-    return
+    if(jdx < 1)
+    {
+      jdx = WLS['header'].length;
+      from_jdx = jdx + 1;
+      editEntry(idx,jdx,from_idx,from_jdx);
+      return;
+    }
+    else if(jdx - 1 == WLS['header'].length)
+    {
+      jdx = 1;
+      from_jdx = 2;
+      editEntry(idx,jdx,from_idx,from_jdx);
+      return;
+    }
   }
 
   var col = document.getElementById(entry.className);
@@ -376,7 +414,8 @@ function modifyEntry(event,idx,jdx)
   var bdx = WLS['rows'][cdx - 1];
   var ndx = WLS['rows'][cdx + 1];
   var j = parseInt(jdx) -1;
-
+  
+  /* move up and down */
   if(event.keyCode == 38)
   {
     process = true;
@@ -389,6 +428,7 @@ function modifyEntry(event,idx,jdx)
     ni = ndx;
     nj = jdx;
   }
+  /* move to left and right */
   else if(event.keyCode == 37 && event.ctrlKey)
   {
     process = true;
@@ -401,11 +441,13 @@ function modifyEntry(event,idx,jdx)
     ni = idx;
     nj = jdx+1;
   }
+  /* unmodify on escape */
   else if(event.keyCode == 27)
   {
     unmodifyEntry(idx,jdx);
     return
   }
+  /* modify on enter */
   else if(event.keyCode != 13)
   {
     return
@@ -499,7 +541,7 @@ function applyFilter()
   var taxa = document.getElementById('taxa');
   var concepts = document.getElementById('concepts');
   var entries = document.getElementById('columns');
-
+  
   var trows = [];
   var crows = [];
   var erows = [];
@@ -535,29 +577,42 @@ function applyFilter()
       crows.push.apply(crows,WLS['concepts'][clist[i]]);
     }
   }
-  for(i in WLS['header'])
+
+  /* check for the filtering of columns now */
+  if(elist[0] == '*')
   {
-    var head = WLS['header'][i];
-    if(elist.indexOf(head) != -1)
+    for(i in WLS['header'])
     {
-      if(BASICS.indexOf(head) != -1)
-      {
-        WLS['columns'][head] = -Math.abs(WLS['columns'][head]);
-      }
-      else
-      {
-        WLS['columns'][head] = Math.abs(WLS['columns'][head]);
-      }
+      head = WLS['header'][i];
+      WLS['columns'][head] = Math.abs(WLS['columns'][head]);
     }
-    else
+  }
+  else
+  {
+    for(i in WLS['header'])
     {
-      if(BASICS.indexOf(head) == -1)
+      var head = WLS['header'][i];
+      if(elist.indexOf(head) != -1)
       {
-        WLS['columns'][head] = -Math.abs(WLS['columns'][head]);
+        if(BASICS.indexOf(head) != -1)
+        {
+          WLS['columns'][head] = -Math.abs(WLS['columns'][head]);
+        }
+        else
+        {
+          WLS['columns'][head] = Math.abs(WLS['columns'][head]);
+        }
       }
       else
       {
-        WLS['columns'][head] = Math.abs(WLS['columns'][head]);
+        if(BASICS.indexOf(head) == -1)
+        {
+          WLS['columns'][head] = -Math.abs(WLS['columns'][head]);
+        }
+        else
+        {
+          WLS['columns'][head] = Math.abs(WLS['columns'][head]);
+        }
       }
     }
   }
@@ -588,6 +643,7 @@ function applyFilter()
   WLS['rows'] = rows.sort(function(x,y){return x-y;});
 }
 
+/* filter the columns in the data */
 function filterColumns(event)
 {
   if(event.keyCode != 13)
@@ -628,15 +684,7 @@ function filterColumns(event)
 
 /* file-handler function from http://www.html5rocks.com/de/tutorials/file/dndfiles/ */
 function handleFileSelect(evt) 
-{
-  //var db = document.getElementById('db');
-  //try
-  //{
-  //  db.innerHTML = localStorage.wls;}
-  //catch(e)
-  //{   db.innerHTML = e
-  //}
-  
+{  
   var files = evt.target.files; /* FileList object */
   var file = files[0];
   var store = document.getElementById('store');
@@ -692,6 +740,7 @@ function refreshFile()
   localStorage.text = text;
   localStorage.filename = CFG['filename'];
 }
+
 function saveFile()
 {
   /* disallow safing when document was not edited */
