@@ -357,8 +357,6 @@ function editEntry(idx,jdx,from_idx,from_jdx)
   var db = document.getElementById('db');
   var entry = line.childNodes[jdx];
 
-  $('#db').html(WLS['header'].length);
-
   if(jdx < 1 || jdx - 1 == WLS["header"].length)
   {
     if(jdx < 1)
