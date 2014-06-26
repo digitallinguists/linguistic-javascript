@@ -36,6 +36,7 @@
         <input id="preview100" type="button"  class="submit"  onclick="CFG['preview'] = 500; showWLS(1);" value="&nbsp;500&nbsp;" />
       </td>
     </tr>
+    <tr id="columncb"></tr>
   </table>
 </div>
 <br><br>
@@ -43,14 +44,12 @@
 <input type="text" class="textfield inactive" onkeyup="filterWLS(event,'concepts');" id="concepts" placeholder="filter concepts" />
 <input type="text" class="textfield inactive" onkeyup="filterWLS(event,'columns');" id="columns" placeholder="filter columns" />
 <input type="text" class="textfield inactive" onkeyup="addColumn(event);" id="add_column" placeholder="add column" />
-
 <br><br>
 <span class="info inactive" id="current"></span>
 <input id="previous" type="button" class="submit inactive" value="&nbsp;PREVIOUS&nbsp;"/>
 <input id="next" type="button" class="submit inactive" value="&nbsp;NEXT&nbsp;" />
 
-
-
+<div id="progressbar">WAIT A SECOND</div>
 
 <br><br>
 <div id="db"></div>
@@ -70,6 +69,11 @@ else
   document.getElementById('filename').innerHTML = '<'+localStorage.filename+'>';
   CFG['filename'] = localStorage.filename;
 }
+</script>
+<script>
+$( "#progressbar" ).progressbar({
+value: false
+});
 </script>
 </body>
 </head>

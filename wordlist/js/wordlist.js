@@ -18,87 +18,99 @@ var db = document.getElementById('db');
 
 /* load qlc-file */
 function csvToArrays(allText, separator, comment) {
-    var allTextLines = allText.split(/\r\n|\n/);
-    var db = document.getElementById('db');
-    
-    var qlc = {};
-    var taxa = {};
-    var concepts = {};
-    var tIdx = -1;
-    var cIdx = -1;
-    var selection = [];
-    var columns = {};
+  var allTextLines = allText.split(/\r\n|\n/);
+  var db = document.getElementById('db');
+  
+  var qlc = {};
+  var taxa = {};
+  var concepts = {};
+  var tIdx = -1;
+  var cIdx = -1;
+  var selection = [];
+  var columns = {};
 
-    var firstLineFound = false;
-    for (var i=0; i<allTextLines.length; i++) 
+  var firstLineFound = false;
+  for (var i=0; i<allTextLines.length; i++) 
+  {
+    var data = allTextLines[i].split(separator);
+    if (data[0] == "ID") 
     {
-      var data = allTextLines[i].split(separator);
-      if (data[0] == "ID") 
+      firstLineFound = true;
+      
+      /* get the header */
+      var header = [];
+      for(j=1;j<data.length;j++)
       {
-        firstLineFound = true;
-        
-        /* get the header */
-        var header = [];
-        for(j=1;j<data.length;j++)
+        var datum = data[j].toUpperCase();
+        header.push(datum);
+        if(["TAXA","TAXON","LANGUAGE","DOCULECT"].indexOf(datum) != -1)
         {
-          var datum = data[j].toUpperCase();
-          header.push(datum);
-          if(["TAXA","TAXON","LANGUAGE","DOCULECT"].indexOf(datum) != -1)
-          {
-            tIdx = j;
-          }
-          if(datum == 'GLOSS' || datum == "CONCEPT")
-          {
-            cIdx = j;
-          }
-          if(BASICS.indexOf(datum) != -1)
-          {
-            columns[datum] = j;
-          }
-          else
-          {
-            columns[datum] = -j;
-          }
-        }; 
-      }
-      else if(data[0].charAt(0) == comment || data[0] == ''){}
-      else if(firstLineFound)
-      {
-        var idx = parseInt(data[0]);
-
-        qlc[idx] = data.slice(1,data.length);
-
-        /* check for header */
-        var taxon = data[tIdx];
-        var concept = data[cIdx];
-        if(taxon in taxa)
+          tIdx = j;
+        }
+        if(datum == 'GLOSS' || datum == "CONCEPT")
         {
-          taxa[taxon].push(idx);
+          cIdx = j;
+        }
+        if(BASICS.indexOf(datum) != -1)
+        {
+          columns[datum] = j;
         }
         else
         {
-          taxa[taxon] = [idx];
+          columns[datum] = -j;
         }
-        if(concept in concepts)
-        {
-          concepts[concept].push(idx);
-        }
-        else
-        {
-          concepts[concept] = [idx];
-        }
-        selection.push(idx);
-      }
+      }; 
     }
-    WLS = qlc;
-    WLS["header"] = header;
-    WLS["taxa"] = taxa;
-    WLS['concepts'] = concepts;
-    WLS['parsed'] = true;
-    WLS['rows'] = selection;
-    WLS['columns'] = columns;
-    WLS['filename'] = CFG['filename'];
- }
+    else if(data[0].charAt(0) == comment || data[0] == ''){}
+    else if(firstLineFound)
+    {
+      var idx = parseInt(data[0]);
+
+      qlc[idx] = data.slice(1,data.length);
+
+      /* check for header */
+      var taxon = data[tIdx];
+      var concept = data[cIdx];
+      if(taxon in taxa)
+      {
+        taxa[taxon].push(idx);
+      }
+      else
+      {
+        taxa[taxon] = [idx];
+      }
+      if(concept in concepts)
+      {
+        concepts[concept].push(idx);
+      }
+      else
+      {
+        concepts[concept] = [idx];
+      }
+      selection.push(idx);
+    }
+  }
+  WLS = qlc;
+  WLS["header"] = header;
+  WLS["taxa"] = taxa;
+  WLS['concepts'] = concepts;
+  WLS['parsed'] = true;
+  WLS['rows'] = selection;
+  WLS['columns'] = columns;
+  WLS['filename'] = CFG['filename'];
+    
+  var all_columns = document.getElementById('columncb');
+  var tmp_text = '<th>Columns</th><td>';
+  for(col in WLS['columns'])
+  {
+    tmp_text += '<input type="checkbox" checked="true" name="columns" value="';
+    tmp_text += col;
+    tmp_text += '"> '+col+'<br>';
+  }
+  all_columns.innerHTML = tmp_text+'</td>';
+  all_columns.style.display = 'table-row';
+    
+}
 
 function showWLS(start)
 {
@@ -225,7 +237,7 @@ function showWLS(start)
 
   var fn = document.getElementById('filename');
   fn.innerHTML = '&lt;'+CFG['filename']+'&gt;';
-
+  
 }
 
 /* specific customized functions for adding a column to the wordlist */
@@ -527,14 +539,35 @@ function filterWLS(event,type)
   if(event.keyCode == 13)
   {
     applyFilter();
-    showWLS(1);
+
+    // determine the correct position at which we are at the moment
+    var previous = document.getElementById('previous');
+    var current_index = 1;
+    if(previous === null)
+    {
+      current_index = 1;
+    }
+    else
+    {
+      current_index = parseInt(previous.value.split('-')[1])+1;
+    }
+    
+    if(isNaN(current_index))
+    {
+      showWLS(1);
+    }
+    else
+    {
+      showWLS(current_index);
+    }
+    //showWLS(1);
   }
 }
 
 function applyFilter()
 {
-  var db = document.getElementById('db');
-  db.innerHTML = '';
+  //var db = document.getElementById('db');
+  //db.innerHTML = '';
 
   var taxa = document.getElementById('taxa');
   var concepts = document.getElementById('concepts');

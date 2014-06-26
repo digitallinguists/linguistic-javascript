@@ -76,3 +76,16 @@
 .settings table{
   border: 1px solid lightgray;
 }
+
+.visible {
+  display: block;
+}
+
+#progressbar {
+  display: none;
+}
+
+#columncb {
+  display:none;
+  vertical-align: top;
+}
