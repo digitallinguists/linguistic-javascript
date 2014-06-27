@@ -4,14 +4,11 @@
 
 <link href="css/no-theme/jquery-ui-1.10.4.custom.css" rel="stylesheet">
 <link rel="stylesheet" type="text/css" href="css/wordlist.css" media="screen">
-
-<script src="js/jquery-1.10.2.js"></script>
-<script src="js/jquery-ui-1.10.4.custom.js"></script>
-<script type="text/javascript" src="js/FileSaver.js"></script>
-<script type="text/javascript" src="js/wordlist.js"></script>
-
+<script src="js/modules.js"></script>
 </head>
 <body>
+
+
 <h3>Wordlist Editor<span id="filename">...</span></h3>
 <input type="file" id="file" name="file" accept=".qlc" class="submit2 active" />
 <input id="view" type="button" onclick="showWLS(1);" class="submit inactive" value="&nbsp;VIEW&nbsp;" />
@@ -56,24 +53,6 @@
 <div id="qlc" ></div>
 <div id="store"></div>
 
-<script type="text/javascript">
-document.getElementById('file').addEventListener('change', handleFileSelect, false);
-if(typeof localStorage.text == 'undefined'){}
-else
-{
-  document.getElementById('store').innerText = localStorage.text;
-  $("#last").removeClass("inactive");
-  $("#last").addClass("active");
-  var last = document.getElementById('last');
-  last.value = "VIEW "+"<"+localStorage.filename+">";
-  document.getElementById('filename').innerHTML = '<'+localStorage.filename+'>';
-  CFG['filename'] = localStorage.filename;
-}
-</script>
-<script>
-$( "#progressbar" ).progressbar({
-value: false
-});
-</script>
+
 </body>
 </head>
