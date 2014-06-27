@@ -7,7 +7,9 @@ var BASICS = [
   "TOKENS",
   "COGID",
   "TAXON",
-  "TAXA"
+  "TAXA",
+  "PROTO",
+  "PROTO_TOKENS"
   ];
 
 var WLS = {};
@@ -228,8 +230,10 @@ function showWLS(start)
   $("#view").removeClass('active');
   $("#view").addClass("inactive");
 
-  $("#settings").removeClass('inactive')
-  $("#settings").addClass('active');  
+  //$("#settings").removeClass('inactive')
+  //$("#settings").addClass('active');
+  $("#settingswitcher").removeClass('inactive');
+  $("#settingswitcher").addClass('active');
   $("#save").removeClass('inactive')
   $("#save").addClass('active');  
   $("#refresh").removeClass('inactive')
@@ -470,7 +474,7 @@ function modifyEntry(event,idx,jdx)
 
 
   /* change sampa to ipa if entries are ipa or tokens */
-  if(entry.className == 'IPA' || entry.className == 'TOKENS')
+  if(entry.className == 'IPA' || entry.className.indexOf('TOKENS') != -1 || entry.className == "PROTO")
   {
     modify.value = sampa2ipa(modify.value);
   }
@@ -828,4 +832,32 @@ function highLight()
 			tokens[i].innerHTML = word;
 		}
 	}
+	var tokens = document.getElementsByClassName('PROTO_TOKENS');
+	for(var i=0;i<tokens.length;i++)
+	{
+		if(tokens[i].innerHTML == tokens[i].dataset.value)
+		{
+			var word = plotWord(tokens[i].dataset.value);
+			tokens[i].innerText = tokens[i].dataset.value;
+			tokens[i].innerHTML = word;
+		}
+	}
 }
+
+function toggleSettings()
+{
+  var settings = document.getElementById('settingswitcher');
+  if(settings.value == 'HIDE SETTINGS')
+  {
+    settings.value = 'SHOW SETTINGS';
+    $('#settings').removeClass('active');
+    $('#settings').addClass('inactive');
+  }
+  else
+  {
+    settings.value = 'HIDE SETTINGS';
+    $('#settings').removeClass('inactive');
+    $('#settings').addClass('active');
+  }
+}
+

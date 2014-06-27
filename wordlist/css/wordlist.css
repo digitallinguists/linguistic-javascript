@@ -58,6 +58,7 @@
 }
 
 .settings{
+  overflow: hidden;
   float:right;
   background-color: #fefefe;
   padding: 10px;

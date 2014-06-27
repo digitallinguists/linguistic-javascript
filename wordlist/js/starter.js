@@ -34,8 +34,6 @@ function startWordlist()
 
 startWordlist();
 
-
-
 document.onkeyup = function (event) {
   if(event.keyCode == 34)
   {
@@ -49,4 +47,45 @@ document.onkeyup = function (event) {
     var idx = parseInt(previous.split('-')[0]);
     showWLS(idx);
   }
+  else if(event.keyCode == 112)
+  {
+    var cols = document.getElementById('columns');
+    if(cols.value == '*')
+    {
+      cols.value = '';
+    }
+    else
+    {
+      cols.value = '*';
+    }
+    applyFilter();
+    // determine the correct position at which we are at the moment
+    var previous = document.getElementById('previous');
+    var current_index = 1;
+    if(previous === null)
+    {
+      current_index = 1;
+    }
+    else
+    {
+      current_index = parseInt(previous.value.split('-')[1])+1;
+    }
+    
+    if(isNaN(current_index))
+    {
+      showWLS(1);
+    }
+    else
+    {
+      showWLS(current_index);
+    }
+  }
+  else if(event.keyCode == 9)
+  {
+    var ids = document.getElementsByClassName('ID')[0];
+    var idx = parseInt(ids.title.split(' ')[1]);
+    editEntry(idx,1,0,0);
+  }
 }
+
+//$("#settings").resizable();});

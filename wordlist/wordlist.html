@@ -15,6 +15,7 @@
 <input id="last" type="button" onclick="showWLS(1);$('#last').removeClass('active');$('#last').addClass('inactive');" class="submit inactive" value="&nbsp;LAST&nbsp;" />
 <input id="refresh" type="button" onclick="refreshFile();" class="submit inactive" value="&nbsp;STORE&nbsp;" />
 <input id="save" type="button" onclick="saveFile();" class="submit inactive" value="&nbsp;SAVE&nbsp;" />
+<input id="settingswitcher" type="button" class="submit inactive" onclick="toggleSettings();" value="SHOW SETTINGS" />
 <div id="settings" class="settings inactive">
   <table>
     <tr>
@@ -36,6 +37,7 @@
     <tr id="columncb"></tr>
   </table>
 </div>
+
 <br><br>
 <input type="text" class="textfield inactive" onkeyup="filterWLS(event,'taxa');" id="taxa" placeholder="filter languages" />
 <input type="text" class="textfield inactive" onkeyup="filterWLS(event,'concepts');" id="concepts" placeholder="filter concepts" />
@@ -45,8 +47,6 @@
 <span class="info inactive" id="current"></span>
 <input id="previous" type="button" class="submit inactive" value="1-1"/>
 <input id="next" type="button" class="submit inactive" value="1-1" />
-
-<div id="progressbar">WAIT A SECOND</div>
 
 <br><br>
 <div id="db"></div>
