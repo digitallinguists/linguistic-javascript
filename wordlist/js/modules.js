@@ -2,6 +2,8 @@ var requirements = [
   "jquery-1.10.2.js",
   "jquery-ui-1.10.4.custom.js",
   "FileSaver.js",
+  "dighl/sampa2ipa.js",
+  "dighl/highlight.js",
   "wordlist.js", 
   "starter.js"
   ];

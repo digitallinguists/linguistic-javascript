@@ -157,7 +157,7 @@ function showWLS(start)
       for(j in WLS[idx])
       {
         var jdx = parseInt(j)+1;
-        text += '<td class="'+WLS['header'][j]+'" title="MODIFY ENTRY '+idx+"/"+jdx+'" onclick="editEntry('+idx+','+jdx+',0,0)">';
+        text += '<td class="'+WLS['header'][j]+'" title="MODIFY ENTRY '+idx+"/"+jdx+'" onclick="editEntry('+idx+','+jdx+',0,0)" data-value="'+WLS[idx][j]+'">';
         text += WLS[idx][j];
         text += "</td>";
       }
@@ -237,7 +237,7 @@ function showWLS(start)
 
   var fn = document.getElementById('filename');
   fn.innerHTML = '&lt;'+CFG['filename']+'&gt;';
-  
+  highLight();
 }
 
 /* specific customized functions for adding a column to the wordlist */
@@ -401,15 +401,16 @@ function editEntry(idx,jdx,from_idx,from_jdx)
     }
     return;
   }
-
+  
   entry.onclick = '';
-  var value = entry.innerHTML;
+  var value = entry.dataset.value;
   var size = value.length + 5;
   var text = '<input type="text" size="'+size+'" id="modify_'+idx+'_'+jdx+'" value="'+value+'" />';
+
   entry.innerHTML = text;
   entry.innerText = value;
 
-  modify = document.getElementById('modify_'+idx+'_'+jdx)
+  var modify = document.getElementById('modify_'+idx+'_'+jdx)
   modify.onkeyup = function(event){modifyEntry(event,idx,jdx)};
   modify.focus();
   modify.onblur = function(){unmodifyEntry(idx,jdx);};
@@ -466,14 +467,24 @@ function modifyEntry(event,idx,jdx)
   var modify = document.getElementById('modify_'+idx+'_'+jdx);
   var entry = modify.parentNode;
   entry.onclick = function(){editEntry(idx,jdx,0,0)};
+
+
+  /* change sampa to ipa if entries are ipa or tokens */
+  if(entry.className == 'IPA' || entry.className == 'TOKENS')
+  {
+    modify.value = sampa2ipa(modify.value);
+  }
   WLS[idx][j] = modify.value;
+  
   entry.removeChild(modify);
   entry.innerHTML = modify.value;
+  entry.dataset.value = modify.value;
 
   if(process == true)
   {
     editEntry(ni,nj,idx,jdx);
   }
+  highLight();
 }
 
 
@@ -487,6 +498,7 @@ function unmodifyEntry(idx,jdx)
   WLS[idx][j] = value;
   entry.removeChild(modify);
   entry.innerHTML = value;
+  highLight();
 }
 
 
@@ -801,4 +813,19 @@ function getDate()
   
   today = [yyyy,mm,dd].join('-')+' '+hh+':'+mins;
   return today;
+}
+
+
+function highLight()
+{
+	var tokens = document.getElementsByClassName('TOKENS');
+	for(var i=0;i<tokens.length;i++)
+	{
+		if(tokens[i].innerHTML == tokens[i].dataset.value)
+		{
+			var word = plotWord(tokens[i].dataset.value);
+			tokens[i].innerText = tokens[i].dataset.value;
+			tokens[i].innerHTML = word;
+		}
+	}
 }
