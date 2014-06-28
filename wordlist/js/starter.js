@@ -47,10 +47,10 @@ document.onkeyup = function (event) {
     var idx = parseInt(previous.split('-')[0]);
     showWLS(idx);
   }
-  else if(event.keyCode == 112)
+  else if(event.keyCode == 115)
   {
     var cols = document.getElementById('columns');
-    if(cols.value == '*')
+    if(cols.value != '')
     {
       cols.value = '';
     }
@@ -59,26 +59,7 @@ document.onkeyup = function (event) {
       cols.value = '*';
     }
     applyFilter();
-    // determine the correct position at which we are at the moment
-    var previous = document.getElementById('previous');
-    var current_index = 1;
-    if(previous === null)
-    {
-      current_index = 1;
-    }
-    else
-    {
-      current_index = parseInt(previous.value.split('-')[1])+1;
-    }
-    
-    if(isNaN(current_index))
-    {
-      showWLS(1);
-    }
-    else
-    {
-      showWLS(current_index);
-    }
+    showCurrent();
   }
   else if(event.keyCode == 9)
   {
@@ -86,6 +67,13 @@ document.onkeyup = function (event) {
     var idx = parseInt(ids.title.split(' ')[1]);
     editEntry(idx,1,0,0);
   }
+  else if(event.keyCode == 113)
+  {
+    toggleSettings();
+  }
+  else if(event.keyCode == 112)
+  {
+    toggleHelp();
+  }
 }
 
-//$("#settings").resizable();});

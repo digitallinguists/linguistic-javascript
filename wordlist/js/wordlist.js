@@ -1,3 +1,12 @@
+/* Wordlist main library
+ *
+ * author   : Johann-Mattis List
+ * email    : mattis.list@lingulist.de
+ * created  : 2014-06-28 09:48
+ * modified : 2014-06-28 09:48
+ *
+ */
+
 /* basic parameters */
 var BASICS = [
   "DOCULECT",
@@ -105,7 +114,12 @@ function csvToArrays(allText, separator, comment) {
   var tmp_text = '<th>Columns</th><td>';
   for(col in WLS['columns'])
   {
-    tmp_text += '<input type="checkbox" checked="true" name="columns" value="';
+    tmp_text += '<input id="cb_'+col+'" onchange="filterColumns(this.value);" type="checkbox" '; 
+    if(BASICS.indexOf(col) != -1)
+    {
+      tmp_text += 'checked ';
+    }
+    tmp_text += 'name="columns" value="';
     tmp_text += col;
     tmp_text += '"> '+col+'<br>';
   }
@@ -230,8 +244,6 @@ function showWLS(start)
   $("#view").removeClass('active');
   $("#view").addClass("inactive");
 
-  //$("#settings").removeClass('inactive')
-  //$("#settings").addClass('active');
   $("#settingswitcher").removeClass('inactive');
   $("#settingswitcher").addClass('active');
   $("#save").removeClass('inactive')
@@ -576,14 +588,11 @@ function filterWLS(event,type)
     {
       showWLS(current_index);
     }
-    //showWLS(1);
   }
 }
 
 function applyFilter()
 {
-  //var db = document.getElementById('db');
-  //db.innerHTML = '';
 
   var taxa = document.getElementById('taxa');
   var concepts = document.getElementById('concepts');
@@ -628,10 +637,16 @@ function applyFilter()
   /* check for the filtering of columns now */
   if(elist[0] == '*')
   {
+    entries.value = '';
     for(i in WLS['header'])
     {
       head = WLS['header'][i];
       WLS['columns'][head] = Math.abs(WLS['columns'][head]);
+      document.getElementById('cb_'+head).checked = true;
+      if(BASICS.indexOf(head) == -1)
+      {
+        entries.value += head+', ';
+      }
     }
   }
   else
@@ -644,10 +659,12 @@ function applyFilter()
         if(BASICS.indexOf(head) != -1)
         {
           WLS['columns'][head] = -Math.abs(WLS['columns'][head]);
+          document.getElementById('cb_'+head).checked = false;
         }
         else
         {
           WLS['columns'][head] = Math.abs(WLS['columns'][head]);
+          document.getElementById('cb_'+head).checked = true;
         }
       }
       else
@@ -655,10 +672,12 @@ function applyFilter()
         if(BASICS.indexOf(head) == -1)
         {
           WLS['columns'][head] = -Math.abs(WLS['columns'][head]);
+          document.getElementById('cb_'+head).checked = false;
         }
         else
         {
           WLS['columns'][head] = Math.abs(WLS['columns'][head]);
+          document.getElementById('cb_'+head).checked = true;
         }
       }
     }
@@ -691,42 +710,47 @@ function applyFilter()
 }
 
 /* filter the columns in the data */
-function filterColumns(event)
+function filterColumns(column)
 {
-  if(event.keyCode != 13)
-  {
-    return;
-  }
-  var fields = document.getElementById('fields').value;
   
-  if(fields == "")
+  var columns = document.getElementById('columns');
+  
+  if(columns.value.indexOf(column) != -1)
   {
-    var all_fields = WLS["header"];
+    columns.value = columns.value.replace(column+', ','');
   }
   else
   {
-    var all_fields = fields.split(',');
-    for(i in all_fields)
-    {
-      all_fields[i] = all_fields[i].trim().toUpperCase();
-    }
+    columns.value += column+', ';
   }
-
-  for(i in WLS["header"])
-  {
-    var head = WLS["header"][i];
-    var col = document.getElementById(head);
-    if(all_fields.indexOf(head) != -1)
-    {
-      col.style.visibility = "visible";
-    }
-    else
-    {
-      col.style.visibility = "collapse";
-    }
-  }
+  
+  //columns.value += column.value+', ';
+  applyFilter();
+  showCurrent();
 }
 
+function showCurrent()
+{
+  var previous = document.getElementById('previous');
+  var current_index = 1;
+  if(previous === null)
+  {
+    current_index = 1;
+  }
+  else
+  {
+    current_index = parseInt(previous.value.split('-')[1])+1;
+  }
+  
+  if(isNaN(current_index))
+  {
+    showWLS(1);
+  }
+  else
+  {
+    showWLS(current_index);
+  }
+}
 
 
 /* file-handler function from http://www.html5rocks.com/de/tutorials/file/dndfiles/ */
@@ -859,5 +883,12 @@ function toggleSettings()
     $('#settings').removeClass('inactive');
     $('#settings').addClass('active');
   }
+}
+
+function toggleHelp()
+{
+  var help = document.getElementById('help');
+  $('#help').toggle('active');
+
 }
 

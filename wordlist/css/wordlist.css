@@ -134,3 +134,11 @@ span.dolgo_1{background-color: #c86496;}
 span.dolgo_X{background-color: #bbbbbb;}
 span.dolgo_GAP{background-color: #bbbbbb;}
 
+
+.help {
+  display: none;
+  position: fixed;
+  background-color: lightgray;
+  border: 2px solid red;
+  max-width: 800px;
+}
