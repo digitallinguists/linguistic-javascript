@@ -24,6 +24,7 @@ var BASICS = [
 var WLS = {};
 var CFG = {'preview':10};
 
+
 var db = document.getElementById('db');
 
 
@@ -352,7 +353,6 @@ function addColumn(event)
   showWLS(1);
 }
 
-
 function editEntry(idx,jdx,from_idx,from_jdx)
 {
   var line = document.getElementById('L_'+idx);
@@ -421,7 +421,7 @@ function editEntry(idx,jdx,from_idx,from_jdx)
   entry.onclick = '';
   var value = entry.dataset.value;
   var size = value.length + 5;
-  var text = '<input type="text" size="'+size+'" id="modify_'+idx+'_'+jdx+'" value="'+value+'" />';
+  var text = '<input class="cellinput" type="text" size="'+size+'" id="modify_'+idx+'_'+jdx+'" value="'+value+'" />';
 
   entry.innerHTML = text;
   entry.innerText = value;
@@ -430,6 +430,39 @@ function editEntry(idx,jdx,from_idx,from_jdx)
   modify.onkeyup = function(event){modifyEntry(event,idx,jdx)};
   modify.focus();
   modify.onblur = function(){unmodifyEntry(idx,jdx);};
+}
+
+function autoModifyEntry(idx,jdx,value)
+{
+  var line = document.getElementById('L_'+idx);
+  var entry = line.childNodes[jdx];
+  entry.dataset.value = value;
+  entry.innerHTML = value;
+  var j = parseInt(jdx) - 1;
+  WLS[idx][j] = value;
+  highLight();
+  if(undoManager.hasUndo() == true)
+  {
+    $('#undo').removeClass('inactive');
+    $('#undo').addClass('active');
+  }
+  else
+  {
+    $('#undo').removeClass('active');
+    $('#undo').addClass('inactive');
+  }
+
+  if(undoManager.hasRedo() == true)
+  {
+    $('#redo').removeClass('inactive');
+    $('#redo').addClass('active');
+  }
+  else
+  {
+    $('#redo').removeClass('active');
+    $('#redo').addClass('inactive');
+  }
+
 }
 
 function modifyEntry(event,idx,jdx)
@@ -494,6 +527,7 @@ function modifyEntry(event,idx,jdx)
   
   entry.removeChild(modify);
   entry.innerHTML = modify.value;
+  var prevalue = entry.dataset.value;
   entry.dataset.value = modify.value;
 
   if(process == true)
@@ -501,6 +535,25 @@ function modifyEntry(event,idx,jdx)
     editEntry(ni,nj,idx,jdx);
   }
   highLight();
+  
+  if(prevalue != modify.value)
+  {
+    undoManager.add({
+      undo: function(){autoModifyEntry(idx,jdx,prevalue);},
+      redo: function(){autoModifyEntry(idx,jdx,modify.value);}
+      }
+    );
+  }
+  if(undoManager.hasUndo())
+  {
+    $('#undo').removeClass('inactive');
+    $('#undo').addClass('active');
+  }
+  else
+  {
+    $('#undo').removeClass('active');
+    $('#undo').addClass('inactive');
+  }
 }
 
 
@@ -508,7 +561,7 @@ function unmodifyEntry(idx,jdx)
 {
   var modify = document.getElementById('modify_'+idx+'_'+jdx);
   var entry = modify.parentNode;
-  value = entry.innerText;
+  var value = entry.innerText;
   entry.onclick = function(){editEntry(idx,jdx,0,0)};
   var j = parseInt(jdx) - 1;
   WLS[idx][j] = value;
@@ -810,6 +863,12 @@ function refreshFile()
   WLS['edited'] = true;
   localStorage.text = text;
   localStorage.filename = CFG['filename'];
+
+  $("#undo").removeClass('active');
+  $("#undo").addClass('inactive');
+  $("#redo").removeClass('active');
+  $("#redo").addClass('inactive');
+  undoManager.clear();
 }
 
 function saveFile()
@@ -892,3 +951,6 @@ function toggleHelp()
 
 }
 
+window.onload = function() {
+    undoManager = new UndoManager();
+}

@@ -6,7 +6,61 @@
   max-width: 250px;
   overflow: auto;
   padding: 5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
+@media screen and (max-width: 600px) {
+  #qlc_table th{
+    text-align: left;
+    background-color: gray;
+    color: white;
+    border: solid 1px lightgray;
+    max-width: 200px;
+    font-size: 80%;
+    overflow: auto;
+    text-overflow: ellipsis;
+    padding 3px;
+  }
+  #qlc_table td{
+    text-align: left;
+    background-color: white;
+    color: black;
+    border: solid 1px lightgray;
+    max-width: 200px;
+    overflow: auto;
+    font-size: 80%;
+    padding: 5px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+@media screen and (max-width: 1000px) and (min-width: 601px) {
+  #qlc_table th{
+    text-align: left;
+    background-color: gray;
+    color: white;
+    border: solid 1px lightgray;
+    max-width: 220px;
+    font-size: 90%;
+    overflow: auto;
+    text-overflow: ellipsis;
+    padding 3px;
+  }
+  #qlc_table td{
+    text-align: left;
+    background-color: white;
+    color: black;
+    border: solid 1px lightgray;
+    max-width: 220px;
+    overflow: auto;
+    font-size: 90%;
+    padding: 5px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+
+
 #qlc_table td{
   text-align: left;
   background-color: white;
@@ -15,6 +69,8 @@
   max-width: 250px;
   overflow: auto;
   padding: 5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 #qlc_table table{
   border: solid 2px black;
@@ -34,6 +90,7 @@
   padding-right: 5px;
   padding-left: 5px;
   cursor: default;
+  background-color: GainsBoro;
 }
 .submit2 {
   border: 1px solid black;
@@ -41,6 +98,7 @@
   padding-bottom: 4px;
   padding-right: 3px;
   padding-left: 3px;
+  background-color: GainsBoro;
 }
 
 .info {
@@ -48,7 +106,7 @@
   padding-bottom: 6px;
   padding-right: 5px;
   padding-left: 5px;
-  background-color: #fdfdfd;
+  background-color: GainsBoro;
   font-weight: bold;
   border: 1px solid black;
 }
@@ -90,8 +148,6 @@
   display:none;
   vertical-align: top;
 }
-
-
 
 span.residue {
   display: table-cell;
@@ -141,4 +197,11 @@ span.dolgo_GAP{background-color: #bbbbbb;}
   background-color: lightgray;
   border: 2px solid red;
   max-width: 800px;
+}
+
+.cellinput {
+  z-index: 1;
+  background-color: GainsBoro;
+  font-size: 110%;
+  width: 100%;
 }

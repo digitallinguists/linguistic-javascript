@@ -75,5 +75,13 @@ document.onkeyup = function (event) {
   {
     toggleHelp();
   }
+  else if(event.keyCode == 90 && event.ctrlKey)
+  {
+    undoManager.undo();
+  }
+  else if(event.keyCode == 89 && event.ctrlKey)
+  {
+    undoManager.redo();
+  }
 }
 
