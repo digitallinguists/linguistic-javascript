@@ -255,6 +255,7 @@ function showWLS(start)
   var fn = document.getElementById('filename');
   fn.innerHTML = '&lt;'+CFG['filename']+'&gt;';
   highLight();
+  return 1;
 }
 
 /* specific customized functions for adding a column to the wordlist */
@@ -432,36 +433,28 @@ function editEntry(idx,jdx,from_idx,from_jdx)
   modify.onblur = function(){unmodifyEntry(idx,jdx);};
 }
 
-function autoModifyEntry(idx,jdx,value)
+function autoModifyEntry(idx,jdx,value,current)
 {
+
+  var tcurrent = parseInt(getCurrent());
+  current = parseInt(current);
+
+  if(tcurrent != current)
+  {
+    var tmp = showWLS(current);
+  }
   var line = document.getElementById('L_'+idx);
-  var entry = line.childNodes[jdx];
-  entry.dataset.value = value;
-  entry.innerHTML = value;
+  if(line !== null)
+  {
+    var entry = line.childNodes[jdx];
+    entry.dataset.value = value;
+    entry.innerHTML = value;
+    entry.style.border = '1px solid Crimson';
+  }
   var j = parseInt(jdx) - 1;
   WLS[idx][j] = value;
+  
   highLight();
-  if(undoManager.hasUndo() == true)
-  {
-    $('#undo').removeClass('inactive');
-    $('#undo').addClass('active');
-  }
-  else
-  {
-    $('#undo').removeClass('active');
-    $('#undo').addClass('inactive');
-  }
-
-  if(undoManager.hasRedo() == true)
-  {
-    $('#redo').removeClass('inactive');
-    $('#redo').addClass('active');
-  }
-  else
-  {
-    $('#redo').removeClass('active');
-    $('#redo').addClass('inactive');
-  }
 
 }
 
@@ -536,15 +529,17 @@ function modifyEntry(event,idx,jdx)
   }
   highLight();
   
+  var current = getCurrent();
+
   if(prevalue != modify.value)
   {
     undoManager.add({
-      undo: function(){autoModifyEntry(idx,jdx,prevalue);},
-      redo: function(){autoModifyEntry(idx,jdx,modify.value);}
+      undo: function(){autoModifyEntry(idx,jdx,prevalue,current);},
+      redo: function(){autoModifyEntry(idx,jdx,modify.value,current);}
       }
     );
   }
-  if(undoManager.hasUndo())
+  if(undoManager.hasUndo() == true)
   {
     $('#undo').removeClass('inactive');
     $('#undo').addClass('active');
@@ -554,6 +549,7 @@ function modifyEntry(event,idx,jdx)
     $('#undo').removeClass('active');
     $('#undo').addClass('inactive');
   }
+  
 }
 
 
@@ -780,6 +776,22 @@ function filterColumns(column)
   //columns.value += column.value+', ';
   applyFilter();
   showCurrent();
+}
+
+
+function getCurrent()
+{
+  var previous = document.getElementById('previous');
+  var current_index = 1;
+  if(previous === null)
+  {
+    current_index = 1;
+  }
+  else
+  {
+    current_index = parseInt(previous.value.split('-')[1])+1;
+  }
+  return current_index;
 }
 
 function showCurrent()

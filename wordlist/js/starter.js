@@ -77,11 +77,64 @@ document.onkeyup = function (event) {
   }
   else if(event.keyCode == 90 && event.ctrlKey)
   {
-    undoManager.undo();
+    UnDo();
   }
   else if(event.keyCode == 89 && event.ctrlKey)
   {
-    undoManager.redo();
+    ReDo();
   }
 }
 
+
+function UnDo()
+{
+  undoManager.undo();
+  var idx = undoManager.getindex();
+  var ldx = undoManager.lastindex();
+  if(idx != -1)
+  {
+    $('#undo').removeClass('inactive');
+    $('#undo').addClass('active');
+  }
+  else
+  {
+    $('#undo').removeClass('active');
+    $('#undo').addClass('inactive');
+  }
+  if(ldx-1>idx)
+  {
+    $('#redo').removeClass('inactive');
+    $('#redo').addClass('active');
+  }
+  else
+  {
+    $('#redo').removeClass('active');
+    $('#redo').addClass('inactive');
+  }  
+}
+function ReDo()
+{
+  undoManager.redo();
+  var idx = undoManager.getindex();
+  var ldx = undoManager.lastindex();
+  if(idx != -1)
+  {
+    $('#undo').removeClass('inactive');
+    $('#undo').addClass('active');
+  }
+  else
+  {
+    $('#undo').removeClass('active');
+    $('#undo').addClass('inactive');
+  }
+  if(ldx-1>idx)
+  {
+    $('#redo').removeClass('inactive');
+    $('#redo').addClass('active');
+  }
+  else
+  {
+    $('#redo').removeClass('active');
+    $('#redo').addClass('inactive');
+  }  
+}

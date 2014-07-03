@@ -58,29 +58,51 @@ var UndoManager = function () {
 		},
 
 		undo: function () {
-			var command = undoCommands[index];
-			if (!command) {
-				return this;
-			}
-			execute(command, "undo");
-			index -= 1;
-			if (callback) {
-				callback();
-			}
-			return this;
+      if(index > -1)
+      {
+			  var command = undoCommands[index];
+			  //if (!command) {
+				//  return this;
+			  //}
+			  execute(command, "undo");
+			  index -= 1;
+			  if (callback) {
+				  callback();
+			  }
+        if(index != -1)
+        {
+			    return this;
+        }
+        else
+        {
+          return 0;
+        }
+      }
+      return 0;
 		},
 
 		redo: function () {
-			var command = undoCommands[index + 1];
-			if (!command) {
-				return this;
-			}
-			execute(command, "redo");
-			index += 1;
-			if (callback) {
-				callback();
-			}
-			return this;
+      if(index < undoCommands.length-1)
+      {
+			  var command = undoCommands[index + 1];
+			  //if (!command) {
+				//  return this;
+			  //}
+			  execute(command, "redo");
+			  index += 1;
+			  if (callback) {
+				  callback();
+			  }
+        if(index < undoCommands.length-1)
+        {
+			    return this;
+        }
+        else
+        {
+          return 0;
+        }
+      }
+      return 0;
 		},
 
 		/*
@@ -96,7 +118,9 @@ var UndoManager = function () {
 				callback();
 			}
 		},
-
+    
+    getindex: function(){return index},
+    lastindex: function(){return undoCommands.length},
 		hasUndo: function () {
 			return index !== -1;
 		},
