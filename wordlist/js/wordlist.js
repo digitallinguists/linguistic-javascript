@@ -102,6 +102,8 @@ function csvToArrays(allText, separator, comment) {
       selection.push(idx);
     }
   }
+  selection.sort(function (x,y){return x-y});
+  
   WLS = qlc;
   WLS["header"] = header;
   WLS["taxa"] = taxa;
@@ -141,29 +143,33 @@ function showWLS(start)
 
   // add col-tags to the dable
   text += '<col id="ID" />';
+  var thtext = ''; // ff vs. chrome problem
   for(i in WLS["header"])
   {
     var head = WLS['header'][i];
     if(WLS['columns'][head] > 0)
     {
       text += '<col id="'+head+'" />';
+      thtext += '<th>'+head+'</th>';
     }
     else
     {
-      text += '<col id="'+head+'" style="visibility:collapse;" />';
+      text += '<col id="'+head+'" style="visibility:hidden;" />';
+      thtext += '<th style="display:none">'+head+'</th>';
     }
   }
 
   text += "<tr>";
   text += "<th>ID</th>";
-  text += "<th>";
-  text += WLS['header'].join("</th><th>");
-  text += "</th>";
+  text += thtext;
+  //text += "<th>";
+  //text += WLS['header'].join("</th><th>");
+  //text += "</th>";
   text += "</tr>";
 
   //for(idx in WLS) 
   var count = 1;
-  for(i in WLS['rows'])
+  for(i in WLS['rows']) //in WLS['rows'])
   {
     var idx = WLS['rows'][i];
     if(!isNaN(idx) && count >= start)
@@ -174,7 +180,17 @@ function showWLS(start)
       for(j in WLS[idx])
       {
         var jdx = parseInt(j)+1;
-        text += '<td class="'+WLS['header'][j]+'" title="MODIFY ENTRY '+idx+"/"+jdx+'" onclick="editEntry('+idx+','+jdx+',0,0)" data-value="'+WLS[idx][j]+'">';
+        
+        var head = WLS['header'][j];
+        if(WLS['columns'][head] > 0)
+        {
+          var cell_display = "";
+        }
+        else
+        {
+          var cell_display = ' style="display:none"'; // ff vs. chrome problem
+        }
+        text += '<td class="'+WLS['header'][j]+'" title="MODIFY ENTRY '+idx+"/"+jdx+'" onclick="editEntry('+idx+','+jdx+',0,0)" data-value="'+WLS[idx][j]+'"'+cell_display+'>';
         text += WLS[idx][j];
         text += "</td>";
       }
@@ -383,7 +399,6 @@ function editEntry(idx,jdx,from_idx,from_jdx)
     }
   }
 
-  var db = document.getElementById('db');
   var entry = line.childNodes[jdx];
 
   if(jdx < 1 || jdx - 1 == WLS["header"].length)
@@ -406,7 +421,7 @@ function editEntry(idx,jdx,from_idx,from_jdx)
 
   var col = document.getElementById(entry.className);
   
-  if(col.style.visibility == 'collapse')
+  if(col.style.visibility == 'hidden')
   {
     if(from_jdx > jdx)
     {
@@ -423,15 +438,40 @@ function editEntry(idx,jdx,from_idx,from_jdx)
   var value = entry.dataset.value;
   var size = value.length + 5;
   var text = '<input class="cellinput" type="text" size="'+size+'" id="modify_'+idx+'_'+jdx+'" value="'+value+'" />';
+  
+  var ipt = document.createElement('input');
+  ipt.setAttribute('class','cellinput');
+  ipt.setAttribute('type','text');
+  ipt.setAttribute('id','modify_'+idx+'_'+jdx);
+  ipt.setAttribute('value',value);
+  ipt.setAttribute('data-value',value);
+  ipt.setAttribute('onkeyup','modifyEntry(event,'+idx+','+jdx+',this.value)');
+  ipt.setAttribute('onblur','unmodifyEntry('+idx+','+jdx+',"'+value+'")');
 
-  entry.innerHTML = text;
-  entry.innerText = value;
+  
+  //$('#db').html(idx+' '+jdx);
+  //ipt.className == "cellinput";
+  //ipt.type = "text";
+  ipt.size = size;
+  //ipt.id = 'modify_'+idx+'_'+jdx;
+  //ipt.value = value;
+  //ipt.onkeyup = function(event){modifyEntry(event,idx,jdx)};
+  //ipt.onblur = function(){unmodifyEntry(idx,jdx)};
+  entry.innerHTML = '';
+  //entry.innerText = value;
+  entry.appendChild(ipt);
+  ipt.focus();
 
-  var modify = document.getElementById('modify_'+idx+'_'+jdx)
-  modify.onkeyup = function(event){modifyEntry(event,idx,jdx)};
-  modify.focus();
-  modify.onblur = function(){unmodifyEntry(idx,jdx);};
+  //completeModify(idx,jdx);
 }
+
+//function completeModify(idx,jdx)
+//{
+//  var modifyx = document.getElementById('modify_'+idx+'_'+jdx)
+//  modifyx.onkeyup = function(event){modifyEntry(event,idx,jdx)};
+//  modifyx.focus();
+//  modifyx.onblur = function(){unmodifyEntry(idx,jdx);};
+//}
 
 function autoModifyEntry(idx,jdx,value,current)
 {
@@ -458,7 +498,7 @@ function autoModifyEntry(idx,jdx,value,current)
 
 }
 
-function modifyEntry(event,idx,jdx)
+function modifyEntry(event,idx,jdx,xvalue)
 {
   var process = false;
 
@@ -468,6 +508,8 @@ function modifyEntry(event,idx,jdx)
   var ndx = WLS['rows'][cdx + 1];
   var j = parseInt(jdx) -1;
   
+  var entry = document.getElementById("L_"+idx).cells[jdx];
+
   /* move up and down */
   if(event.keyCode == 38)
   {
@@ -497,7 +539,7 @@ function modifyEntry(event,idx,jdx)
   /* unmodify on escape */
   else if(event.keyCode == 27)
   {
-    unmodifyEntry(idx,jdx);
+    unmodifyEntry(idx,jdx,entry.dataset.value);
     return
   }
   /* modify on enter */
@@ -506,22 +548,26 @@ function modifyEntry(event,idx,jdx)
     return
   }
 
-  var modify = document.getElementById('modify_'+idx+'_'+jdx);
-  var entry = modify.parentNode;
-  entry.onclick = function(){editEntry(idx,jdx,0,0)};
+  //var modify = document.getElementById('modify_'+idx+'_'+jdx);
+  //var entry = modify.parentNode;
+  //entry.removeChild(modify);
+
 
 
   /* change sampa to ipa if entries are ipa or tokens */
   if(entry.className == 'IPA' || entry.className.indexOf('TOKENS') != -1 || entry.className == "PROTO")
   {
-    modify.value = sampa2ipa(modify.value);
+    xvalue = sampa2ipa(xvalue); //modify.value);
   }
-  WLS[idx][j] = modify.value;
-  
-  entry.removeChild(modify);
-  entry.innerHTML = modify.value;
+  WLS[idx][j] = xvalue; //modify.value;
+ 
   var prevalue = entry.dataset.value;
-  entry.dataset.value = modify.value;
+  entry.dataset.value = xvalue; //this.value; //modify.value;
+
+  entry.onclick = function(){editEntry(idx,jdx,0,0)};
+
+  entry.innerHTML = '';
+  entry.innerHTML = xvalue; //modify.value;
 
   if(process == true)
   {
@@ -531,11 +577,11 @@ function modifyEntry(event,idx,jdx)
   
   var current = getCurrent();
 
-  if(prevalue != modify.value)
+  if(prevalue != xvalue)
   {
     undoManager.add({
       undo: function(){autoModifyEntry(idx,jdx,prevalue,current);},
-      redo: function(){autoModifyEntry(idx,jdx,modify.value,current);}
+      redo: function(){autoModifyEntry(idx,jdx,xvalue,current);}
       }
     );
   }
@@ -550,20 +596,25 @@ function modifyEntry(event,idx,jdx)
     $('#undo').addClass('inactive');
   }
   
+  //entry.style.border = '10px solid black'; // debug
+  
 }
 
 
-function unmodifyEntry(idx,jdx)
+function unmodifyEntry(idx,jdx,xvalue)
 {
-  var modify = document.getElementById('modify_'+idx+'_'+jdx);
-  var entry = modify.parentNode;
-  var value = entry.innerText;
+  var entry = document.getElementById("L_"+idx).cells[jdx];
+  //var modify = document.getElementById('modify_'+idx+'_'+jdx);
+  //var entry = modify.parentNode;
+  var value = xvalue; //entry.innerText;
   entry.onclick = function(){editEntry(idx,jdx,0,0)};
   var j = parseInt(jdx) - 1;
   WLS[idx][j] = value;
-  entry.removeChild(modify);
+  //entry.removeChild(modify);
+  entry.innerHTML = '';
   entry.innerHTML = value;
   highLight();
+  //entry.style.border = '10px solid red'; // debug
 }
 
 
@@ -954,6 +1005,7 @@ function toggleSettings()
     $('#settings').removeClass('inactive');
     $('#settings').addClass('active');
   }
+
 }
 
 function toggleHelp()

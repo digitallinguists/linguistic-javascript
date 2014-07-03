@@ -15,7 +15,7 @@ for(var i=0;i<requirements.length;i++)
   var script = document.createElement('script');
   script.src = 'js/'+r;
   script.async = false;
-  script.type="text/javascript";
+  script.setAttribute('type','text/javascript'); //type="text/javascript";
   document.head.appendChild(script);
 }
 
