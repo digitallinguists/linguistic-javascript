@@ -5,19 +5,20 @@ Wordlist main page
 author   : Johann-Mattis List
 email    : mattis.list@lingulist.de
 created  : 2014-06-28 09:47
-modified : 2014-06-28 09:47
+modified : 2014-07-04 12:56
 
 -->
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
 
-<link href="css/no-theme/jquery-ui-1.10.4.custom.css" rel="stylesheet">
-<link rel="stylesheet" type="text/css" href="css/wordlist.css" media="screen">
+<link href="css/no-theme/jquery-ui-1.10.4.custom.css" rel="stylesheet" />
+<link rel="stylesheet" type="text/css" href="css/wordlist.css" media="screen" />
+<link rel="icon" href="img/wordlists.png" type="image/png" />
 <script src="js/modules.js"></script>
+<title>Wordlist Editor</title>
 </head>
 <body>
-
 <div id="help" class="help">
   <h3>How to use the Wordlist Editor</h3>
   In order to use the wordlist editor, you will need a valid input file. This file should be structured as a csv file with the first line indicating the names of all columns and the first column pointing to a unique ID for each row of the file.
@@ -41,8 +42,15 @@ modified : 2014-06-28 09:47
   are displayed. 
   For taxa and concepts, just type in the name of the taxon or concept you want to select and separate multiple taxa and concept by a comma. For the filtering of columns, you may also toggle between the display of the basic columns (default) and all columns by pressing [F4], or you may select the columns within the settings menu (press [F2] to show or close the settings).
 </div>
-<h3>Wordlist Editor<span id="filename">...</span> (Press F1 for Help)</h3>
-<input type="file" id="file" name="file" accept=".qlc" class="submit2 active" />
+<div style="border:2px solid #2e5ca8;display:block;width:100%;overflow:hidden;">
+<div style="float:left;display:inline;"><img style="margin-top:20px;margin-bottom:20px;margin-left:20px;" src="img/wordlists.png" alt="tsv" width="50px"></div>
+<div style="font-size:200%;font-weight:bold;margin:30px;color:#2e5ca8;float:left;display:inline;">Wordlist Editor <span id="filename"> </span></div>
+<input id="help" class="submit" style="float:right;font-weight:bold;background-color:#2e5ca8;color:white;margin:10px;" type="button" onclick="toggleHelp();" value="HELP" />
+</div>
+
+<div style="overflow:hidden;border:2px dotted #2e5ca8;margin-top:20px;padding-bottom:30px;padding-left:20px;padding-right:20px;padding-top:10px;">
+<a name="settings" style="font-weight:bold;color:#2e5ca8">MENU</a><br><br>
+<input type="file" id="file" name="file" class="submit2 active" />
 <input id="view" type="button" onclick="showWLS(1);" class="submit inactive" value="&nbsp;VIEW&nbsp;" />
 <input id="last" type="button" onclick="showWLS(1);$('#last').removeClass('active');$('#last').addClass('inactive');" class="submit inactive" value="&nbsp;LAST&nbsp;" />
 <input id="refresh" type="button" onclick="refreshFile();" class="submit inactive" value="&nbsp;STORE&nbsp;" />
@@ -50,6 +58,17 @@ modified : 2014-06-28 09:47
 <input id="settingswitcher" type="button" class="submit inactive" onclick="toggleSettings();" value="SHOW SETTINGS" />
 <input id="undo" type="button" onclick="UnDo();" class="submit inactive" value="UNDO" />
 <input id="redo" type="button" onclick="ReDo();" class="submit inactive" value="REDO" />
+
+
+<br><br>
+<input type="text" class="textfield inactive" onkeyup="filterWLS(event,'taxa');" id="taxa" placeholder="filter languages" />
+<input type="text" class="textfield inactive" onkeyup="filterWLS(event,'concepts');" id="concepts" placeholder="filter concepts" />
+<input type="text" class="textfield inactive" onkeyup="filterWLS(event,'columns');" id="columns" placeholder="filter columns" />
+<input type="text" class="textfield inactive" onkeyup="addColumn(event);" id="add_column" placeholder="add column" />
+
+
+</div>
+<div style="border:2px dotted #2e5ca8;margin-top:20px;padding-left:20px;padding-right:20px;padding-top:10px;padding-bottom:10px;overflow:hidden">
 <div id="settings" class="settings inactive">
   <table>
     <tr>
@@ -71,21 +90,14 @@ modified : 2014-06-28 09:47
     <tr id="columncb"></tr>
   </table>
 </div>
-
-<br><br>
-<input type="text" class="textfield inactive" onkeyup="filterWLS(event,'taxa');" id="taxa" placeholder="filter languages" />
-<input type="text" class="textfield inactive" onkeyup="filterWLS(event,'concepts');" id="concepts" placeholder="filter concepts" />
-<input type="text" class="textfield inactive" onkeyup="filterWLS(event,'columns');" id="columns" placeholder="filter columns" />
-<input type="text" class="textfield inactive" onkeyup="addColumn(event);" id="add_column" placeholder="add column" />
-<br><br>
 <span class="info inactive" id="current"></span>
 <input id="previous" type="button" class="submit inactive" value="0-0"/>
 <input id="next" type="button" class="submit inactive" value="1-1" />
 
 <br><br>
 <div id="db"></div>
-<div id="qlc" ></div>
+<div name="qlc" id="qlc" ></div>
 <div id="store" style="display:none"></div>
-
+</div>
 </body>
 </head>

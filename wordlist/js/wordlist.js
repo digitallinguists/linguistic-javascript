@@ -67,7 +67,20 @@ function csvToArrays(allText, separator, comment) {
         {
           columns[datum] = -j;
         }
-      }; 
+      };
+      /* apply check for tidx and cidx */
+      if(tIdx == -1 && cIdx == -1){tIdx = 1;cIdx = 2;}
+      else if(cIdx == -1 && tIdx > 1){cIdx = 1;      }
+      else if(cIdx == -1 && tIdx <= 1){cIdx = 2;     }
+      else if(tIdx == -1 && cIdx > 1){tIdx = 1;      }
+      else if(tIdx == -1 && cIdx <= 1){tIdx = 2;     }
+      
+      /* append to basics */
+      columns[data[tIdx].toUpperCase()] = Math.abs(columns[data[tIdx].toUpperCase()]);
+      columns[data[cIdx].toUpperCase()] = Math.abs(columns[data[cIdx].toUpperCase()]);
+      BASICS.push(data[tIdx].toUpperCase());
+      BASICS.push(data[cIdx].toUpperCase());
+
     }
     else if(data[0].charAt(0) == comment || data[0] == ''){}
     else if(firstLineFound)
