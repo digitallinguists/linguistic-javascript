@@ -33,8 +33,17 @@ function startWordlist()
 }
 
 startWordlist();
-
-document.onkeyup = function (event) {
+document.onkeyup = function(event)
+{
+  if(event.keyCode == 9)
+  {
+    var ids = document.getElementsByClassName('ID')[0];
+    var idx = parseInt(ids.title.split(' ')[1]);
+    editEntry(idx,1,0,0);
+    return;
+  }
+}
+document.onkeydown = function (event) {
   if(event.keyCode == 34)
   {
     var next = document.getElementById('next').value;
@@ -61,18 +70,19 @@ document.onkeyup = function (event) {
     applyFilter();
     showCurrent();
   }
-  else if(event.keyCode == 9)
-  {
-    var ids = document.getElementsByClassName('ID')[0];
-    var idx = parseInt(ids.title.split(' ')[1]);
-    editEntry(idx,1,0,0);
-  }
+  //else if(event.keyCode == 9)
+  //{
+  //  var ids = document.getElementsByClassName('ID')[0];
+  //  var idx = parseInt(ids.title.split(' ')[1]);
+  //  editEntry(idx,1,0,0);
+  //}
   else if(event.keyCode == 113)
   {
     toggleSettings();
   }
   else if(event.keyCode == 112)
   {
+    event.preventDefault();
     toggleHelp();
   }
   else if(event.keyCode == 90 && event.ctrlKey)
@@ -83,6 +93,7 @@ document.onkeyup = function (event) {
   {
     ReDo();
   }
+  return;
 }
 
 

@@ -23,15 +23,11 @@ var BASICS = [
 
 var WLS = {};
 var CFG = {'preview':10};
-
-
-var db = document.getElementById('db');
-
+var STORE = ''; // global variable to store the text data in raw format
 
 /* load qlc-file */
 function csvToArrays(allText, separator, comment) {
   var allTextLines = allText.split(/\r\n|\n/);
-  var db = document.getElementById('db');
   
   var qlc = {};
   var taxa = {};
@@ -102,6 +98,7 @@ function csvToArrays(allText, separator, comment) {
       selection.push(idx);
     }
   }
+  // check whether or not we need this sorting mode, maybe we can as well get rid of it
   selection.sort(function (x,y){return x-y});
   
   WLS = qlc;
@@ -135,8 +132,9 @@ function showWLS(start)
 {
   if(!WLS['parsed'])
   {
-    var store = document.getElementById('store');
-    csvToArrays(store.innerText,"\t","#");
+    //var store = document.getElementById('store');
+    
+    csvToArrays(STORE,"\t","#");
   }
 
   var text = '<table id="qlc_table">';
@@ -162,9 +160,6 @@ function showWLS(start)
   text += "<tr>";
   text += "<th>ID</th>";
   text += thtext;
-  //text += "<th>";
-  //text += WLS['header'].join("</th><th>");
-  //text += "</th>";
   text += "</tr>";
 
   //for(idx in WLS) 
@@ -448,30 +443,13 @@ function editEntry(idx,jdx,from_idx,from_jdx)
   ipt.setAttribute('onkeyup','modifyEntry(event,'+idx+','+jdx+',this.value)');
   ipt.setAttribute('onblur','unmodifyEntry('+idx+','+jdx+',"'+value+'")');
 
-  
-  //$('#db').html(idx+' '+jdx);
-  //ipt.className == "cellinput";
-  //ipt.type = "text";
   ipt.size = size;
-  //ipt.id = 'modify_'+idx+'_'+jdx;
-  //ipt.value = value;
-  //ipt.onkeyup = function(event){modifyEntry(event,idx,jdx)};
-  //ipt.onblur = function(){unmodifyEntry(idx,jdx)};
   entry.innerHTML = '';
-  //entry.innerText = value;
   entry.appendChild(ipt);
   ipt.focus();
 
   //completeModify(idx,jdx);
 }
-
-//function completeModify(idx,jdx)
-//{
-//  var modifyx = document.getElementById('modify_'+idx+'_'+jdx)
-//  modifyx.onkeyup = function(event){modifyEntry(event,idx,jdx)};
-//  modifyx.focus();
-//  modifyx.onblur = function(){unmodifyEntry(idx,jdx);};
-//}
 
 function autoModifyEntry(idx,jdx,value,current)
 {
@@ -548,18 +526,12 @@ function modifyEntry(event,idx,jdx,xvalue)
     return
   }
 
-  //var modify = document.getElementById('modify_'+idx+'_'+jdx);
-  //var entry = modify.parentNode;
-  //entry.removeChild(modify);
-
-
-
   /* change sampa to ipa if entries are ipa or tokens */
   if(entry.className == 'IPA' || entry.className.indexOf('TOKENS') != -1 || entry.className == "PROTO")
   {
     xvalue = sampa2ipa(xvalue); //modify.value);
   }
-  WLS[idx][j] = xvalue; //modify.value;
+  //WLS[idx][j] = xvalue; //modify.value;
  
   var prevalue = entry.dataset.value;
   entry.dataset.value = xvalue; //this.value; //modify.value;
@@ -584,6 +556,7 @@ function modifyEntry(event,idx,jdx,xvalue)
       redo: function(){autoModifyEntry(idx,jdx,xvalue,current);}
       }
     );
+    WLS[idx][jdx-1] = xvalue;
   }
   if(undoManager.hasUndo() == true)
   {
@@ -594,27 +567,20 @@ function modifyEntry(event,idx,jdx,xvalue)
   {
     $('#undo').removeClass('active');
     $('#undo').addClass('inactive');
-  }
-  
-  //entry.style.border = '10px solid black'; // debug
-  
+  }  
 }
 
 
 function unmodifyEntry(idx,jdx,xvalue)
 {
   var entry = document.getElementById("L_"+idx).cells[jdx];
-  //var modify = document.getElementById('modify_'+idx+'_'+jdx);
-  //var entry = modify.parentNode;
   var value = xvalue; //entry.innerText;
   entry.onclick = function(){editEntry(idx,jdx,0,0)};
   var j = parseInt(jdx) - 1;
   WLS[idx][j] = value;
-  //entry.removeChild(modify);
   entry.innerHTML = '';
   entry.innerHTML = value;
   highLight();
-  //entry.style.border = '10px solid red'; // debug
 }
 
 
@@ -868,20 +834,19 @@ function showCurrent()
   }
 }
 
-
 /* file-handler function from http://www.html5rocks.com/de/tutorials/file/dndfiles/ */
 function handleFileSelect(evt) 
 {  
   var files = evt.target.files; /* FileList object */
   var file = files[0];
-  var store = document.getElementById('store');
+  //var store = document.getElementById('store');
   CFG['filename'] = file.name;
   localStorage.filename = file.name;
 
   /* create file reader instance */
-  var reader = new FileReader();
+  var reader = new FileReader({async:false});
   //$.get('harry.msa', function(data){document.getElementById('store').innerText = data}, alert("loaded text"), 'text');
-  reader.onload = function(e){store.innerText = reader.result;}
+  reader.onload = function(e){STORE = reader.result;}
   reader.readAsText(file);
 
   var modify = ['view'];
@@ -890,7 +855,7 @@ function handleFileSelect(evt)
     tmp = document.getElementById(modify[i]);
     tmp.className = view.className.replace(/inactive/,'active');
   }
-  var modify = ["concepts","columns","taxa","add_column","previous","next","current",'store','save'];
+  var modify = ["concepts","columns","taxa","add_column","previous","next","current",'save'];
   for(i in modify)
   {
     $("#"+modify[i]).removeClass("active");
@@ -905,7 +870,7 @@ function handleFileSelect(evt)
 
 function refreshFile()
 {
-  var store = document.getElementById('store');
+  //var store = document.getElementById('store');
   var text = "# WORDLIST\n";
   text += "@modified: "+getDate()+'\n#\n';
   text += "ID\t"+WLS['header'].join('\t')+'\n';
@@ -922,9 +887,10 @@ function refreshFile()
       }
     }
   }
-  store.innerText = text;
+  //store.innerText = text;
+  STORE = text;
   WLS['edited'] = true;
-  localStorage.text = text;
+  //localStorage.text = text;
   localStorage.filename = CFG['filename'];
 
   $("#undo").removeClass('active');
@@ -932,6 +898,7 @@ function refreshFile()
   $("#redo").removeClass('active');
   $("#redo").addClass('inactive');
   undoManager.clear();
+  showWLS(getCurrent());
 }
 
 function saveFile()
@@ -939,8 +906,8 @@ function saveFile()
   /* disallow safing when document was not edited */
   if(WLS['edited'] == false){return}
   
-  var store = document.getElementById('store');
-  var blob = new Blob([store.innerText], {type: "text/plain;charset=utf-8"});
+  //var store = document.getElementById('store');
+  var blob = new Blob([STORE], {type: "text/plain;charset=utf-8"});
   saveAs(blob, CFG['filename']);  
 }
 
