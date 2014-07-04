@@ -262,12 +262,10 @@ function showWLS(start)
   for(i in modify)
   {
     tmp = document.getElementById(modify[i]);
-    tmp.className = view.className.replace(/inactive/,'active');
+    tmp.className = tmp.className.replace(/inactive/,'active');
   }
 
-
-  $("#view").removeClass('active');
-  $("#view").addClass("inactive");
+  document.getElementById('view').style.display = 'none';
 
   $("#settingswitcher").removeClass('inactive');
   $("#settingswitcher").addClass('active');
@@ -275,7 +273,7 @@ function showWLS(start)
   $("#save").addClass('active');  
   $("#refresh").removeClass('inactive')
   $("#refresh").addClass('active');  
-
+  document.getElementById('filedisplay').style.display = 'block';
   var fn = document.getElementById('filename');
   fn.innerHTML = '&lt;'+CFG['filename']+'&gt;';
   highLight();
@@ -866,7 +864,7 @@ function handleFileSelect(evt)
   for(i in modify)
   {
     tmp = document.getElementById(modify[i]);
-    tmp.className = view.className.replace(/inactive/,'active');
+    tmp.style.display = 'block';
   }
   var modify = ["concepts","columns","taxa","add_column","previous","next","current",'save'];
   for(i in modify)
@@ -878,7 +876,8 @@ function handleFileSelect(evt)
 
   var fn = document.getElementById('filename');
   fn.innerHTML = '&lt;'+CFG['filename']+'&gt;';
-  
+  var dropZone = document.getElementById('drop_zone');
+  dropZone.style.display = "none";
 }
 
 function refreshFile()

@@ -194,9 +194,11 @@ span.dolgo_GAP{background-color: #bbbbbb;}
 .help {
   display: none;
   position: fixed;
-  background-color: lightgray;
-  border: 2px solid red;
+  color: white;
+  background-color: #2e5ca8;
+  border: 2px dotted white;
   max-width: 800px;
+  padding: 25px;
 }
 
 .cellinput {
@@ -205,3 +207,26 @@ span.dolgo_GAP{background-color: #bbbbbb;}
   font-size: 110%;
   width: 100%;
 }
+
+#drop_zone {
+  margin-top: 10px;
+    border: 2px dotted white;
+    padding: 25px;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+}
+#view {
+    margin-top: 10px;
+    border: 2px dotted white;
+    padding: 25px;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    cursor:pointer;
+    background-color:#2e5ca8;
+    background-color:Crimson;
+    display:none;
+}
+
+

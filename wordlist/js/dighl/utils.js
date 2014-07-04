@@ -41,3 +41,30 @@ function range(start,stop,step)
   return list;
 }
 
+function loadFile(url,async)
+{
+  if(typeof async == 'undefined')
+  {
+    async = false;
+  }
+  else
+  {
+    async = true;
+  }
+
+  var store = document.getElementById('store');
+  if(store === null)
+  {
+    var store = document.createElement('div');
+    store.style.display = "none";
+    document.body.appendChild(store);
+  }
+
+  $.ajax({
+    async: async,
+    type: "GET",
+    url: url,
+    dataType: "text",
+    success: function(data) { store.innerText = data; }
+  });
+}

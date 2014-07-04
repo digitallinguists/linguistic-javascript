@@ -42,16 +42,18 @@ modified : 2014-07-04 12:56
   are displayed. 
   For taxa and concepts, just type in the name of the taxon or concept you want to select and separate multiple taxa and concept by a comma. For the filtering of columns, you may also toggle between the display of the basic columns (default) and all columns by pressing [F4], or you may select the columns within the settings menu (press [F2] to show or close the settings).
 </div>
-<div style="border:2px solid #2e5ca8;display:block;width:100%;overflow:hidden;">
+<div style="border:2px solid #2e5ca8;display:block;overflow:hidden;">
 <div style="float:left;display:inline;"><img style="margin-top:20px;margin-bottom:20px;margin-left:20px;" src="img/wordlists.png" alt="tsv" width="50px"></div>
 <div style="font-size:200%;font-weight:bold;margin:30px;color:#2e5ca8;float:left;display:inline;">Wordlist Editor <span id="filename"> </span></div>
-<input id="help" class="submit" style="float:right;font-weight:bold;background-color:#2e5ca8;color:white;margin:10px;" type="button" onclick="toggleHelp();" value="HELP" />
+<input id="helpx" class="submit" style="float:right;font-weight:bold;background-color:#2e5ca8;color:white;margin-right:10px;margin-top:10px;" type="button" onclick="toggleHelp();" value="HELP" />
+<input id="refresh" class="submit" style="float:right;font-weight:bold;background-color:#2e5ca8;color:white;margin-top:10px;margin-right:10px;" type="button" onclick="window.location.reload();" value="REFRESH" />
+
 </div>
 
-<div style="overflow:hidden;border:2px dotted #2e5ca8;margin-top:20px;padding-bottom:30px;padding-left:20px;padding-right:20px;padding-top:10px;">
+<div style="display:block;overflow:hidden;border:2px dotted #2e5ca8;margin-top:20px;padding-bottom:30px;padding-left:20px;padding-right:20px;padding-top:10px;">
 <a name="settings" style="font-weight:bold;color:#2e5ca8">MENU</a><br><br>
 <input type="file" id="file" name="file" class="submit2 active" />
-<input id="view" type="button" onclick="showWLS(1);" class="submit inactive" value="&nbsp;VIEW&nbsp;" />
+
 <input id="last" type="button" onclick="showWLS(1);$('#last').removeClass('active');$('#last').addClass('inactive');" class="submit inactive" value="&nbsp;LAST&nbsp;" />
 <input id="refresh" type="button" onclick="refreshFile();" class="submit inactive" value="&nbsp;STORE&nbsp;" />
 <input id="save" type="button" onclick="saveFile();" class="submit inactive" value="&nbsp;SAVE&nbsp;" />
@@ -65,10 +67,19 @@ modified : 2014-07-04 12:56
 <input type="text" class="textfield inactive" onkeyup="filterWLS(event,'concepts');" id="concepts" placeholder="filter concepts" />
 <input type="text" class="textfield inactive" onkeyup="filterWLS(event,'columns');" id="columns" placeholder="filter columns" />
 <input type="text" class="textfield inactive" onkeyup="addColumn(event);" id="add_column" placeholder="add column" />
-
-
 </div>
-<div style="border:2px dotted #2e5ca8;margin-top:20px;padding-left:20px;padding-right:20px;padding-top:10px;padding-bottom:10px;overflow:hidden">
+
+<div class="drop_zone" id="drop_zone">Drop your file here.</div>
+<div 
+  id="view" 
+  onclick="showWLS(1);" 
+  class="view inactive" 
+  value="&nbsp;VIEW&nbsp;"
+  >
+  Open the file.
+</div>
+
+<div style="border:2px dotted #2e5ca8;margin-top:20px;padding-left:20px;padding-right:20px;padding-top:10px;padding-bottom:10px;overflow:hidden;display:none" id="filedisplay">
 <div id="settings" class="settings inactive">
   <table>
     <tr>
