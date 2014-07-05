@@ -44,18 +44,21 @@ document.onkeyup = function(event)
   }
 }
 document.onkeydown = function (event) {
+  /* page down key code */
   if(event.keyCode == 34)
   {
     var next = document.getElementById('next').value;
     var idx = parseInt(next.split('-')[0]);
     showWLS(idx);
   }
+  /* page up key code */
   else if(event.keyCode == 33)
   {
     var previous = document.getElementById('previous').value;
     var idx = parseInt(previous.split('-')[0]);
     showWLS(idx);
   }
+  /* toggle columns F4 */
   else if(event.keyCode == 115)
   {
     var cols = document.getElementById('columns');
@@ -70,29 +73,28 @@ document.onkeydown = function (event) {
     applyFilter();
     showCurrent();
   }
-  //else if(event.keyCode == 9)
-  //{
-  //  var ids = document.getElementsByClassName('ID')[0];
-  //  var idx = parseInt(ids.title.split(' ')[1]);
-  //  editEntry(idx,1,0,0);
-  //}
+  /* toggle settings F2 */
   else if(event.keyCode == 113)
   {
     toggleSettings();
   }
+  /* toggle help F1 */
   else if(event.keyCode == 112)
   {
     event.preventDefault();
     toggleHelp();
   }
+  /* ctrl z goes back */
   else if(event.keyCode == 90 && event.ctrlKey)
   {
     UnDo();
   }
+  /* ctrl y goes front */
   else if(event.keyCode == 89 && event.ctrlKey)
   {
     ReDo();
   }
+  /* save page */
   return;
 }
 
@@ -200,3 +202,6 @@ dropZone.addEventListener('dragover', handleDragOver, false);
 dropZone.addEventListener('drop', handleFileSelect2, false);
 dropZone.style.backgroundColor = "#2e5ca8";
 
+
+
+$('#settings').draggable();

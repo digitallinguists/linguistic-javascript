@@ -1,8 +1,8 @@
 #qlc_table th{
   text-align: left;
-  background-color:gray;
+  background-color:#2e5ca8;
   color: white;
-  border: solid 1px lightgray;
+  border: solid 1px #2e5ca8;
   max-width: 250px;
   overflow: auto;
   padding: 5px;
@@ -12,11 +12,11 @@
 @media screen and (max-width: 600px) {
   #qlc_table th{
     text-align: left;
-    background-color: gray;
+    background-color: #2e5ca8;
     color: white;
-    border: solid 1px lightgray;
+    border: solid 1px #2e5ca8;
     max-width: 200px;
-    font-size: 80%;
+    font-size: 50%;
     overflow: auto;
     text-overflow: ellipsis;
     padding 3px;
@@ -25,10 +25,10 @@
     text-align: left;
     background-color: white;
     color: black;
-    border: solid 1px lightgray;
+    border: solid 1px #2e5ca8;
     max-width: 200px;
     overflow: auto;
-    font-size: 80%;
+    font-size: 50%;
     padding: 5px;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -37,11 +37,11 @@
 @media screen and (max-width: 1000px) and (min-width: 601px) {
   #qlc_table th{
     text-align: left;
-    background-color: gray;
+    background-color: #2e5ca8;
     color: white;
-    border: solid 1px lightgray;
+    border: solid 1px #2e5ca8;
     max-width: 220px;
-    font-size: 90%;
+    font-size: 80%;
     overflow: auto;
     text-overflow: ellipsis;
     padding 3px;
@@ -50,10 +50,10 @@
     text-align: left;
     background-color: white;
     color: black;
-    border: solid 1px lightgray;
+    border: solid 1px #2e5ca8;
     max-width: 220px;
     overflow: auto;
-    font-size: 90%;
+    font-size: 80%;
     padding: 5px;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -65,7 +65,7 @@
   text-align: left;
   background-color: white;
   color: black;
-  border: solid 1px lightgray;
+  border: solid 1px #2e5ca8;
   max-width: 250px;
   overflow: auto;
   padding: 5px;
@@ -84,31 +84,36 @@
 }
 
 .submit {
-  border: 1px solid black;
   padding-top: 5px;
   padding-bottom: 5px;
   padding-right: 5px;
   padding-left: 5px;
-  cursor: default;
-  background-color: GainsBoro;
+  cursor: pointer;
+  color:white;
+  font-weight:bold;
+  background-color: #2e5ca8;
+  border: none;
 }
 .submit2 {
-  border: 1px solid black;
+  color:white;
+  font-weight:bold;
+  border: none;
   padding-top: 3px;
   padding-bottom: 4px;
   padding-right: 3px;
   padding-left: 3px;
-  background-color: GainsBoro;
+  background-color: #2e5ca8;
 }
 
 .info {
+  color:white;
   padding-top: 4px;
-  padding-bottom: 6px;
+  padding-bottom: 5px;
   padding-right: 5px;
   padding-left: 5px;
-  background-color: GainsBoro;
+  background-color: #2e5ca8;
   font-weight: bold;
-  border: 1px solid black;
+  border: 1px dotted white;
 }
 
 .textfield {
@@ -122,18 +127,18 @@
   padding: 10px;
 }
 .settings th{
-  border: 1px solid lightgray;
+  border: 1px solid #2e5ca8;
   text-align:left;
   padding:5px;
 }
 .settings td{
-  border: 1px solid lightgray;
+  border: 1px solid #2e5ca8;
   text-align:left;
   padding:5px;
 }
 
 .settings table{
-  border: 1px solid lightgray;
+  border: 1px solid #2e5ca8;
 }
 
 .visible {
@@ -203,7 +208,8 @@ span.dolgo_GAP{background-color: #bbbbbb;}
 
 .cellinput {
   z-index: 1;
-  background-color: GainsBoro;
+  color: white;
+  background-color: #2e5ca8;
   font-size: 110%;
   width: 100%;
 }
@@ -229,4 +235,61 @@ span.dolgo_GAP{background-color: #bbbbbb;}
     display:none;
 }
 
+.ui-autocomplete {
+	position: absolute;
+	top: 0;
+	left: 0;
+	cursor: default;
+  color:white;
+  background-color: #2e5ca8;
+  border: 1px dotted white;
+}
 
+.ui-button:active {
+	text-decoration: none;
+  font-weight: bold;
+}
+
+.fake_alert {
+  position: absolute;
+  margin-left: auto;
+  margin-right: auto;
+  top:50%;
+  left:0;
+  right:0;
+  background-color: Crimson;
+  border: 2px dotted white;
+  text-align:center;
+  width:40%;
+  float: left;
+}
+.fake_alert p {
+  color: white;
+  font-weight: bold;
+}
+.fake_alert div {
+  color: white;
+  font-weight: bold;
+  width: 100%;
+  padding-top:10px;
+  padding-bottom: 10px;
+  border-top: 2px dotted Crimson;
+  background-color: #2e5ca8;
+  cursor: pointer;
+}
+
+.options {
+  float:right;
+  font-weight:bold;
+  background-color:#2e5ca8;
+  border: none;
+  color:white;
+  margin-top:10px;
+  margin-right:10px;
+  border: 0px solid black;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-right: 5px;
+  padding-left: 5px;
+  cursor: pointer;
+}

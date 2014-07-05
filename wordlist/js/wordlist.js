@@ -614,6 +614,7 @@ function filterWLS(event,type)
       }
     ).autocomplete(
     {
+      delay: 0,
       minLength: 0,
       source: function( request, response ) 
       {
@@ -913,10 +914,24 @@ function refreshFile()
   showWLS(getCurrent());
 }
 
+function fakeAlert(text)
+{
+  var falert = document.createElement('div');
+  falert.id = "fake";
+  falert.innerHTML = '<p>'+text+'</p>';
+  falert.innerHTML += '<div id="fake" onclick="'+"$('#fake').remove();"+'")> OK </div>'; 
+  falert.className = 'fake_alert';
+  
+  document.body.appendChild(falert);
+}
 function saveFile()
 {
   /* disallow safing when document was not edited */
-  if(WLS['edited'] == false){return}
+  if(!WLS['edited'])
+  {
+    fakeAlert("You need to store the document before you can save it.");
+    return;
+  }
   
   //var store = document.getElementById('store');
   var blob = new Blob([STORE], {type: "text/plain;charset=utf-8"});
