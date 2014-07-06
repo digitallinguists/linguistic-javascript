@@ -9,26 +9,26 @@
 
 /* basic parameters */
 var BASICS = [
-  "DOCULECT",
-  "GLOSS",
-  "CONCEPT",
-  "IPA",
-  "TOKENS",
-  "COGID",
-  "TAXON",
-  "TAXA",
-  "PROTO",
-  "PROTO_TOKENS"
+  'DOCULECT',
+  'GLOSS',
+  'CONCEPT',
+  'IPA',
+  'TOKENS',
+  'COGID',
+  'TAXON',
+  'TAXA',
+  'PROTO',
+  'PROTO_TOKENS'
   ];
 
 var WLS = {};
-var CFG = {'preview':10};
+var CFG = {'preview': 10};
 var STORE = ''; // global variable to store the text data in raw format
 
 /* load qlc-file */
 function csvToArrays(allText, separator, comment) {
   var allTextLines = allText.split(/\r\n|\n/);
-  
+
   var qlc = {};
   var taxa = {};
   var concepts = {};
@@ -36,30 +36,32 @@ function csvToArrays(allText, separator, comment) {
   var cIdx = -1;
   var selection = [];
   var columns = {};
+  var count = 1;
 
   var firstLineFound = false;
-  for (var i=0; i<allTextLines.length; i++) 
+  for (var i = 0; i < allTextLines.length; i++)
   {
     var data = allTextLines[i].split(separator);
-    if (data[0] == "ID") 
+    if (data[0].charAt(0) == comment || data[0].replace(/\s*/g,'') == ''){}
+    else if (data[0] == 'ID')
     {
       firstLineFound = true;
-      
+
       /* get the header */
       var header = [];
-      for(j=1;j<data.length;j++)
+      for (j = 1; j < data.length; j++)
       {
         var datum = data[j].toUpperCase();
         header.push(datum);
-        if(["TAXA","TAXON","LANGUAGE","DOCULECT"].indexOf(datum) != -1)
+        if (['TAXA', 'TAXON', 'LANGUAGE', 'DOCULECT'].indexOf(datum) != -1)
         {
           tIdx = j;
         }
-        if(datum == 'GLOSS' || datum == "CONCEPT")
+        if (datum == 'GLOSS' || datum == 'CONCEPT')
         {
           cIdx = j;
         }
-        if(BASICS.indexOf(datum) != -1)
+        if (BASICS.indexOf(datum) != -1)
         {
           columns[datum] = j;
         }
@@ -67,14 +69,14 @@ function csvToArrays(allText, separator, comment) {
         {
           columns[datum] = -j;
         }
-      };
+      }
       /* apply check for tidx and cidx */
-      if(tIdx == -1 && cIdx == -1){tIdx = 1;cIdx = 2;}
-      else if(cIdx == -1 && tIdx > 1){cIdx = 1;      }
-      else if(cIdx == -1 && tIdx <= 1){cIdx = 2;     }
-      else if(tIdx == -1 && cIdx > 1){tIdx = 1;      }
-      else if(tIdx == -1 && cIdx <= 1){tIdx = 2;     }
-      
+      if (tIdx == -1 && cIdx == -1) {tIdx = 1;cIdx = 2;}
+      else if (cIdx == -1 && tIdx > 1) {cIdx = 1; }
+      else if (cIdx == -1 && tIdx <= 1) {cIdx = 2; }
+      else if (tIdx == -1 && cIdx > 1) {tIdx = 1; }
+      else if (tIdx == -1 && cIdx <= 1) {tIdx = 2; }
+
       /* append to basics */
       columns[data[tIdx].toUpperCase()] = Math.abs(columns[data[tIdx].toUpperCase()]);
       columns[data[cIdx].toUpperCase()] = Math.abs(columns[data[cIdx].toUpperCase()]);
@@ -82,17 +84,17 @@ function csvToArrays(allText, separator, comment) {
       BASICS.push(data[cIdx].toUpperCase());
 
     }
-    else if(data[0].charAt(0) == comment || data[0] == ''){}
-    else if(firstLineFound)
+    //else if (data[0].charAt(0) == comment || data[0] == '') {}
+    else if (firstLineFound)
     {
       var idx = parseInt(data[0]);
 
-      qlc[idx] = data.slice(1,data.length);
+      qlc[idx] = data.slice(1, data.length);
 
       /* check for header */
       var taxon = data[tIdx];
       var concept = data[cIdx];
-      if(taxon in taxa)
+      if (taxon in taxa)
       {
         taxa[taxon].push(idx);
       }
@@ -100,7 +102,7 @@ function csvToArrays(allText, separator, comment) {
       {
         taxa[taxon] = [idx];
       }
-      if(concept in concepts)
+      if (concept in concepts)
       {
         concepts[concept].push(idx);
       }
@@ -112,42 +114,42 @@ function csvToArrays(allText, separator, comment) {
     }
   }
   // check whether or not we need this sorting mode, maybe we can as well get rid of it
-  selection.sort(function (x,y){return x-y});
-  
+  //selection.sort(function(x, y) {return x - y});
+
   WLS = qlc;
-  WLS["header"] = header;
-  WLS["taxa"] = taxa;
+  WLS['header'] = header;
+  WLS['taxa'] = taxa;
   WLS['concepts'] = concepts;
   WLS['parsed'] = true;
   WLS['rows'] = selection;
   WLS['columns'] = columns;
   WLS['filename'] = CFG['filename'];
-    
+
   var all_columns = document.getElementById('columncb');
   var tmp_text = '<th>Columns</th><td>';
-  for(col in WLS['columns'])
+  for (col in WLS['columns'])
   {
-    tmp_text += '<input id="cb_'+col+'" onchange="filterColumns(this.value);" type="checkbox" '; 
-    if(BASICS.indexOf(col) != -1)
+    tmp_text += '<input id="cb_' + col + '" onchange="filterColumns(this.value);" type="checkbox" ';
+    if (BASICS.indexOf(col) != -1)
     {
       tmp_text += 'checked ';
     }
     tmp_text += 'name="columns" value="';
     tmp_text += col;
-    tmp_text += '"> '+col+'<br>';
+    tmp_text += '"> ' + col + '<br>';
   }
-  all_columns.innerHTML = tmp_text+'</td>';
+  all_columns.innerHTML = tmp_text + '</td>';
   all_columns.style.display = 'table-row';
-    
+
 }
 
 function showWLS(start)
 {
-  if(!WLS['parsed'])
+  if (!WLS['parsed'])
   {
     //var store = document.getElementById('store');
-    
-    csvToArrays(STORE,"\t","#");
+
+    csvToArrays(STORE, '\t', '#');
   }
 
   var text = '<table id="qlc_table">';
@@ -155,128 +157,130 @@ function showWLS(start)
   // add col-tags to the dable
   text += '<col id="ID" />';
   var thtext = ''; // ff vs. chrome problem
-  for(i in WLS["header"])
+  for (i in WLS['header'])
   {
     var head = WLS['header'][i];
-    if(WLS['columns'][head] > 0)
+    if (WLS['columns'][head] > 0)
     {
-      text += '<col id="'+head+'" />';
-      thtext += '<th>'+head+'</th>';
+      text += '<col id="' + head + '" />';
+      thtext += '<th>' + head + '</th>';
     }
     else
     {
-      text += '<col id="'+head+'" style="visibility:hidden;" />';
-      thtext += '<th style="display:none">'+head+'</th>';
+      text += '<col id="' + head + '" style="visibility:hidden;" />';
+      thtext += '<th style="display:none">' + head + '</th>';
     }
   }
 
-  text += "<tr>";
-  text += "<th>ID</th>";
+  text += '<tr>';
+  text += '<th>ID</th>';
   text += thtext;
-  text += "</tr>";
+  text += '</tr>';
 
-  //for(idx in WLS) 
+  //for(idx in WLS)
   var count = 1;
-  for(i in WLS['rows']) //in WLS['rows'])
+  for (i in WLS['rows']) //in WLS['rows'])
   {
     var idx = WLS['rows'][i];
-    if(!isNaN(idx) && count >= start)
+    if (!isNaN(idx) && count >= start)
     {
-      var rowidx = parseInt(i)+1;
-      text += '<tr id="L_'+idx+'">';
-      text += '<td class="ID" title="LINE '+rowidx+'">'+idx+"</td>";
-      for(j in WLS[idx])
+      var rowidx = parseInt(i) + 1;
+      text += '<tr id="L_' + idx + '">';
+      text += '<td class="ID" title="LINE ' + rowidx + '">' + idx + '</td>';
+      for (j in WLS[idx])
       {
-        var jdx = parseInt(j)+1;
-        
+        var jdx = parseInt(j) + 1;
+
         var head = WLS['header'][j];
-        if(WLS['columns'][head] > 0)
+        if (WLS['columns'][head] > 0)
         {
-          var cell_display = "";
+          var cell_display = '';
         }
         else
         {
           var cell_display = ' style="display:none"'; // ff vs. chrome problem
         }
-        text += '<td class="'+WLS['header'][j]+'" title="MODIFY ENTRY '+idx+"/"+jdx+'" onclick="editEntry('+idx+','+jdx+',0,0)" data-value="'+WLS[idx][j]+'"'+cell_display+'>';
+        text += '<td class="' + WLS['header'][j] + '" title="MODIFY ENTRY ' + idx + '/' + jdx + '" onclick="editEntry(' + idx + ',' + jdx + ',0,0)" data-value="' + WLS[idx][j] + '"' + cell_display + '>';
         text += WLS[idx][j];
-        text += "</td>";
+        text += '</td>';
       }
-      text += "</tr>";
+      text += '</tr>';
       count += 1;
     }
-    else{count += 1;}
-    if(count >= start+CFG['preview'])
+    else {count += 1;}
+    if (count >= start + CFG['preview'])
     {
       break;
     }
   }
-  text += "</table>";
+  text += '</table>';
   qlc.innerHTML = text;
-  
-  var db=document.getElementById('db');
+
+  var db = document.getElementById('db');
 
   // modify previous and next
-  var previous = document.getElementById("previous");
-  if(parseInt(start)-CFG['preview'] >= 0)
+  var previous = document.getElementById('previous');
+  if (parseInt(start) - CFG['preview'] >= 0)
   {
-    previous.onclick = function(){showWLS(start-CFG['preview']);};
-    var prestart = start-CFG['preview'];
-    var startbefore = start-1;
-    previous.value = prestart +'-'+startbefore;
-    previous.className = previous.className.replace(/inactive/,'active');
+    previous.onclick = function() {showWLS(start - CFG['preview']);};
+    var prestart = start - CFG['preview'];
+    var startbefore = start - 1;
+    previous.value = prestart + '-' + startbefore;
+    previous.className = previous.className.replace(/inactive/, 'active');
   }
   else
   {
-    previous.className = previous.className.replace(/ active/,' inactive');
+    previous.className = previous.className.replace(/ active/, ' inactive');
   }
 
-  var next = document.getElementById("next");
-  if(WLS['rows'].length > start+CFG['preview'])
+  var next = document.getElementById('next');
+  if (WLS['rows'].length > start + CFG['preview'])
   {
-    var poststart = start+parseInt(CFG['preview']);
-    var postpoststart = start+2 * parseInt(CFG['preview'])-1;
-    if(postpoststart >= WLS['rows'].length)
+    var poststart = start + parseInt(CFG['preview']);
+    var postpoststart = start + 2 * parseInt(CFG['preview']) - 1;
+    if (postpoststart >= WLS['rows'].length)
     {
       postpoststart = WLS['rows'].length;
     }
-    next.onclick = function(){showWLS(poststart);};
-    next.value = poststart+'-'+postpoststart;
-    next.className = next.className.replace(/inactive/,'active');
+    next.onclick = function() {showWLS(poststart);};
+    next.value = poststart + '-' + postpoststart;
+    next.className = next.className.replace(/inactive/, 'active');
   }
   else
   {
-    next.className = next.className.replace(/ active/,' inactive');
+    next.className = next.className.replace(/ active/, ' inactive');
   }
 
   var current = document.getElementById('current');
   var following = start + CFG['preview'] - 1;
-  if(following >= WLS['rows'].length-1)
+  if (following >= WLS['rows'].length - 1)
   {
     following = WLS['rows'].length;
   }
-  current.innerHTML = "Showing "+start + ' - '+following +' of '+parseInt(WLS['rows'].length) + " entries";
-  current.className = current.className.replace(/inactive/,'active');
+  current.innerHTML = 'Showing ' + start + ' - ' + following + ' of ' + parseInt(WLS['rows'].length) + ' entries';
+  current.className = current.className.replace(/inactive/, 'active');
 
-  var modify = ['taxa','concepts','columns','add_column'];
-  for(i in modify)
+  var modify = ['taxa', 'concepts', 'columns', 'add_column'];
+  for (i in modify)
   {
     tmp = document.getElementById(modify[i]);
-    tmp.className = tmp.className.replace(/inactive/,'active');
+    tmp.className = tmp.className.replace(/inactive/, 'active');
   }
 
   document.getElementById('view').style.display = 'none';
 
-  $("#settingswitcher").removeClass('inactive');
-  $("#settingswitcher").addClass('active');
-  $("#save").removeClass('inactive')
-  $("#save").addClass('active');  
-  $("#refresh").removeClass('inactive')
-  $("#refresh").addClass('active');  
+  $('#settingswitcher').removeClass('inactive');
+  $('#settingswitcher').addClass('active');
+  $('#save').removeClass('inactive');
+  $('#save').addClass('active');
+  $('#refresh').removeClass('inactive');
+  $('#refresh').addClass('active');
   document.getElementById('filedisplay').style.display = 'block';
+  document.getElementById('drop_zone').style.display = 'none';
   var fn = document.getElementById('filename');
-  fn.innerHTML = '&lt;'+CFG['filename']+'&gt;';
+  fn.innerHTML = '&lt;' + CFG['filename'] + '&gt;';
   highLight();
+
   return 1;
 }
 
@@ -284,35 +288,35 @@ function showWLS(start)
 function addColumn(event)
 {
   var col = document.getElementById('add_column');
-  
-  if(event.keyCode != 13 )
+
+  if (event.keyCode != 13)
   {
     return;
   }
-  
+
   var name = col.value.trim();
-  if(name == '')
+  if (name == '')
   {
     col.value = '';
     return;
   }
-  var base = function(i){return "?"};
+  var base = function(i) {return '?'};
 
-  if(name.indexOf('>>') != -1)
+  if (name.indexOf('>>') != -1)
   {
     var basename = name.split('>>');
     var basex = basename[0];
 
     var bases = basex.split(/\+/);
-    var base = function(i){
+    var base = function(i) {
       var new_entry = '';
-      for(k in bases)
+      for (k in bases)
       {
         var tmp = bases[k];
-        if(tmp.charAt(0) == '$')
+        if (tmp.charAt(0) == '$')
         {
-          var j = WLS['header'].indexOf(tmp.slice(1,tmp.length).toUpperCase());
-          if(j != -1)
+          var j = WLS['header'].indexOf(tmp.slice(1, tmp.length).toUpperCase());
+          if (j != -1)
           {
             new_entry += WLS[i][j];
           }
@@ -321,24 +325,24 @@ function addColumn(event)
             new_entry += tmp;
           }
         }
-        else if(tmp.charAt(0) == '!')
+        else if (tmp.charAt(0) == '!')
         {
           try
           {
-            var str = 'var x = '+tmp.slice(1,tmp.length)+'('+'"'+new_entry+'"); return x;';
+            var str = 'var x = ' + tmp.slice(1, tmp.length) + '(' + '"' + new_entry + '"); return x;';
             var F = new Function(str);
             new_entry = F();
           }
-          catch(err)
+          catch (err)
           {
             db = document.getElementById('db');
             db.innerHTML = err;
-            db.style.color = "red";
+            db.style.color = 'red';
           }
         }
-        else if(tmp.indexOf('(') != -1 && tmp.indexOf(')') != -1)
+        else if (tmp.indexOf('(') != -1 && tmp.indexOf(')') != -1)
         {
-            var str = 'var x = "'+new_entry+'".'+tmp+"; return x;";
+            var str = 'var x = "' + new_entry + '".' + tmp + '; return x;';
             var F = new Function(str);
             new_entry = F();
         }
@@ -351,53 +355,76 @@ function addColumn(event)
     };
     var name = basename[1].toUpperCase();
   }
-  
-  if(name in WLS['columns'])
+
+  if (name in WLS['columns'])
   {
     col.value = '';
     return;
   }
-  
-  for(idx in WLS)
+
+  for (idx in WLS)
   {
-    if(!isNaN(idx))
+    if (!isNaN(idx))
     {
       WLS[idx].push(base(idx));
     }
   }
   WLS['header'].push(name);
-  WLS['columns'][name] = WLS.header.length-1;
-  if(BASICS.indexOf(name) == -1)
+  WLS['columns'][name] = WLS.header.length - 1;
+  if (BASICS.indexOf(name) == -1)
   {
     BASICS.push(name);
   }
-  
+
   col.value = '';
   showWLS(1);
 }
 
-function editEntry(idx,jdx,from_idx,from_jdx)
+function editEntry(idx, jdx, from_idx, from_jdx)
 {
-  var line = document.getElementById('L_'+idx);
-  
+  var line = document.getElementById('L_' + idx);
+
   /* if line is undefined, check for next view */
-  if(line === null)
+  if (line === null || typeof line == 'undefined')
   {
-    if(idx > from_idx)
+    var ridx = WLS['rows'].indexOf(idx);
+    var fidx = WLS['rows'].indexOf(from_idx);
+
+    if(ridx == -1 || fidx == -1)
     {
-      var next = document.getElementById('next');
-      var to_idx = parseInt(next.value.split('-')[0]);
-      showWLS(to_idx);
-      editEntry(idx,jdx,from_idx,from_jdx);
+      fakeAlert("Error with the IDs, cannot find the correct indices.");
       return;
     }
-    else if(idx < from_idx)
+    if (ridx > fidx)
+    {
+      var next = document.getElementById('next');
+      if(typeof next != 'undefined')
+      {
+        var to_idx = parseInt(next.value.split('-')[0]);
+        showWLS(to_idx);
+        editEntry(idx, jdx, from_idx, from_jdx);
+        return;
+      }
+      else
+      {
+        fakeAlert("Error with following entry, it seems to be undefined.");
+        return;
+      }
+    }
+    else if (ridx < fidx)
     {
       var previous = document.getElementById('previous');
-      var to_idx = parseInt(previous.value.split('-')[0]);
-      showWLS(to_idx);
-      editEntry(idx,jdx,from_idx,from_jdx);
-      return;
+      if(typeof previous != 'undefined')
+      {
+        var to_idx = parseInt(previous.value.split('-')[0]);
+        showWLS(to_idx);
+        editEntry(idx, jdx, from_idx, from_jdx);
+        return;
+      }
+      else
+      {
+        fakeAlert("Error with preceeding entry, it seems to be undefined.");
+      }
     }
     else
     {
@@ -407,52 +434,52 @@ function editEntry(idx,jdx,from_idx,from_jdx)
 
   var entry = line.childNodes[jdx];
 
-  if(jdx < 1 || jdx - 1 == WLS["header"].length)
+  if (jdx < 1 || jdx - 1 == WLS['header'].length)
   {
-    if(jdx < 1)
+    if (jdx < 1)
     {
       jdx = WLS['header'].length;
       from_jdx = jdx + 1;
-      editEntry(idx,jdx,from_idx,from_jdx);
+      editEntry(idx, jdx, from_idx, from_jdx);
       return;
     }
-    else if(jdx - 1 == WLS['header'].length)
+    else if (jdx - 1 == WLS['header'].length)
     {
       jdx = 1;
       from_jdx = 2;
-      editEntry(idx,jdx,from_idx,from_jdx);
+      editEntry(idx, jdx, from_idx, from_jdx);
       return;
     }
   }
 
   var col = document.getElementById(entry.className);
-  
-  if(col.style.visibility == 'hidden')
+
+  if (col.style.visibility == 'hidden')
   {
-    if(from_jdx > jdx)
+    if (from_jdx > jdx)
     {
-      editEntry(idx,jdx-1,from_idx,from_jdx);
+      editEntry(idx, jdx - 1, from_idx, from_jdx);
     }
-    else if(from_jdx < jdx)
+    else if (from_jdx < jdx)
     {
-      editEntry(idx,jdx+1,from_idx,from_jdx);
+      editEntry(idx, jdx + 1, from_idx, from_jdx);
     }
     return;
   }
-  
+
   entry.onclick = '';
   var value = entry.dataset.value;
   var size = value.length + 5;
-  var text = '<input class="cellinput" type="text" size="'+size+'" id="modify_'+idx+'_'+jdx+'" value="'+value+'" />';
-  
+  var text = '<input class="cellinput" type="text" size="' + size + '" id="modify_' + idx + '_' + jdx + '" value="' + value + '" />';
+
   var ipt = document.createElement('input');
-  ipt.setAttribute('class','cellinput');
-  ipt.setAttribute('type','text');
-  ipt.setAttribute('id','modify_'+idx+'_'+jdx);
-  ipt.setAttribute('value',value);
-  ipt.setAttribute('data-value',value);
-  ipt.setAttribute('onkeyup','modifyEntry(event,'+idx+','+jdx+',this.value)');
-  ipt.setAttribute('onblur','unmodifyEntry('+idx+','+jdx+',"'+value+'")');
+  ipt.setAttribute('class', 'cellinput');
+  ipt.setAttribute('type', 'text');
+  ipt.setAttribute('id', 'modify_' + idx + '_' + jdx);
+  ipt.setAttribute('value', value);
+  ipt.setAttribute('data-value', value);
+  ipt.setAttribute('onkeyup', 'modifyEntry(event,' + idx + ',' + jdx + ',this.value)');
+  ipt.setAttribute('onblur', 'unmodifyEntry(' + idx + ',' + jdx + ',"' + value + '")');
 
   ipt.size = size;
   entry.innerHTML = '';
@@ -462,18 +489,18 @@ function editEntry(idx,jdx,from_idx,from_jdx)
   //completeModify(idx,jdx);
 }
 
-function autoModifyEntry(idx,jdx,value,current)
+function autoModifyEntry(idx, jdx, value, current)
 {
 
   var tcurrent = parseInt(getCurrent());
   current = parseInt(current);
 
-  if(tcurrent != current)
+  if (tcurrent != current)
   {
     var tmp = showWLS(current);
   }
-  var line = document.getElementById('L_'+idx);
-  if(line !== null)
+  var line = document.getElementById('L_' + idx);
+  if (line !== null)
   {
     var entry = line.childNodes[jdx];
     entry.dataset.value = value;
@@ -482,12 +509,12 @@ function autoModifyEntry(idx,jdx,value,current)
   }
   var j = parseInt(jdx) - 1;
   WLS[idx][j] = value;
-  
+
   highLight();
 
 }
 
-function modifyEntry(event,idx,jdx,xvalue)
+function modifyEntry(event, idx, jdx, xvalue)
 {
   var process = false;
 
@@ -495,81 +522,81 @@ function modifyEntry(event,idx,jdx,xvalue)
   var cdx = WLS['rows'].indexOf(idx);
   var bdx = WLS['rows'][cdx - 1];
   var ndx = WLS['rows'][cdx + 1];
-  var j = parseInt(jdx) -1;
-  
-  var entry = document.getElementById("L_"+idx).cells[jdx];
+  var j = parseInt(jdx) - 1;
+
+  var entry = document.getElementById('L_' + idx).cells[jdx];
 
   /* move up and down */
-  if(event.keyCode == 38)
+  if (event.keyCode == 38)
   {
     process = true;
     ni = bdx;
     nj = jdx;
   }
-  else if(event.keyCode == 40)
+  else if (event.keyCode == 40)
   {
     process = true;
     ni = ndx;
     nj = jdx;
   }
   /* move to left and right */
-  else if(event.keyCode == 37 && event.ctrlKey)
+  else if (event.keyCode == 37 && event.ctrlKey)
   {
     process = true;
     ni = idx;
-    nj = jdx-1;
+    nj = jdx - 1;
   }
-  else if(event.keyCode == 39 && event.ctrlKey)
+  else if (event.keyCode == 39 && event.ctrlKey)
   {
     process = true;
     ni = idx;
-    nj = jdx+1;
+    nj = jdx + 1;
   }
   /* unmodify on escape */
-  else if(event.keyCode == 27)
+  else if (event.keyCode == 27)
   {
-    unmodifyEntry(idx,jdx,entry.dataset.value);
-    return
+    unmodifyEntry(idx, jdx, entry.dataset.value);
+    return;
   }
   /* modify on enter */
-  else if(event.keyCode != 13)
+  else if (event.keyCode != 13)
   {
-    return
+    return;
   }
 
   /* change sampa to ipa if entries are ipa or tokens */
-  if(entry.className == 'IPA' || entry.className.indexOf('TOKENS') != -1 || entry.className == "PROTO")
+  if (entry.className == 'IPA' || entry.className.indexOf('TOKENS') != -1 || entry.className == 'PROTO')
   {
     xvalue = sampa2ipa(xvalue); //modify.value);
   }
   //WLS[idx][j] = xvalue; //modify.value;
- 
+
   var prevalue = entry.dataset.value;
   entry.dataset.value = xvalue; //this.value; //modify.value;
 
-  entry.onclick = function(){editEntry(idx,jdx,0,0)};
+  entry.onclick = function() {editEntry(idx, jdx, 0, 0)};
 
   entry.innerHTML = '';
   entry.innerHTML = xvalue; //modify.value;
 
-  if(process == true)
+  if (process == true)
   {
-    editEntry(ni,nj,idx,jdx);
+    editEntry(ni, nj, idx, jdx);
   }
   highLight();
-  
+
   var current = getCurrent();
 
-  if(prevalue != xvalue)
+  if (prevalue != xvalue)
   {
     undoManager.add({
-      undo: function(){autoModifyEntry(idx,jdx,prevalue,current);},
-      redo: function(){autoModifyEntry(idx,jdx,xvalue,current);}
+      undo: function() {autoModifyEntry(idx, jdx, prevalue, current);},
+      redo: function() {autoModifyEntry(idx, jdx, xvalue, current);}
       }
     );
-    WLS[idx][jdx-1] = xvalue;
+    WLS[idx][jdx - 1] = xvalue;
   }
-  if(undoManager.hasUndo() == true)
+  if (undoManager.hasUndo() == true)
   {
     $('#undo').removeClass('inactive');
     $('#undo').addClass('active');
@@ -578,15 +605,15 @@ function modifyEntry(event,idx,jdx,xvalue)
   {
     $('#undo').removeClass('active');
     $('#undo').addClass('inactive');
-  }  
+  }
 }
 
 
-function unmodifyEntry(idx,jdx,xvalue)
+function unmodifyEntry(idx, jdx, xvalue)
 {
-  var entry = document.getElementById("L_"+idx).cells[jdx];
+  var entry = document.getElementById('L_' + idx).cells[jdx];
   var value = xvalue; //entry.innerText;
-  entry.onclick = function(){editEntry(idx,jdx,0,0)};
+  entry.onclick = function() {editEntry(idx, jdx, 0, 0)};
   var j = parseInt(jdx) - 1;
   WLS[idx][j] = value;
   entry.innerHTML = '';
@@ -595,19 +622,19 @@ function unmodifyEntry(idx,jdx,xvalue)
 }
 
 
-function filterWLS(event,type)
+function filterWLS(event, type)
 {
   var stuff = Object.keys(WLS[type]);
-  
-  function split( val ) {
-    return val.split( /,\s*/ );
+
+  function split(val ) {
+    return val.split(/,\s*/);
   }
-  function extractLast( term ) {
-    return split( term ).pop();
+  function extractLast(term ) {
+    return split(term).pop();
   }
-  $( "#"+type ).bind( "keydown", function( event ) 
+  $('#' + type).bind('keydown', function(event ) 
       {
-        if ( event.keyCode === $.ui.keyCode.TAB &&  $( this ).data( "ui-autocomplete" ).menu.active ) 
+        if (event.keyCode === $.ui.keyCode.TAB && $(this).data('ui-autocomplete').menu.active)
         {
           event.preventDefault();
         }
@@ -616,49 +643,49 @@ function filterWLS(event,type)
     {
       delay: 0,
       minLength: 0,
-      source: function( request, response ) 
+      source: function(request, response ) 
       {
         // delegate back to autocomplete, but extract the last term
-        response( $.ui.autocomplete.filter(
-        stuff, extractLast( request.term ) ) );
+        response($.ui.autocomplete.filter(
+        stuff, extractLast(request.term)));
       },
       focus: function() 
       {
         // prevent value inserted on focus
         return false;
       },
-      select: function( event, ui ) 
+      select: function(event, ui ) 
       {
-        var terms = split( this.value );
+        var terms = split(this.value);
         // remove the current input
         terms.pop();
         // add the selected item
-        terms.push( ui.item.value );
+        terms.push(ui.item.value);
         // add placeholder to get the comma-and-space at the end
-        terms.push( "" );
-        this.value = terms.join( ", " );
+        terms.push('');
+        this.value = terms.join(', ');
         return false;
       }
     }
   );
-  
-  if(event.keyCode == 13)
+
+  if (event.keyCode == 13)
   {
     applyFilter();
 
     // determine the correct position at which we are at the moment
     var previous = document.getElementById('previous');
     var current_index = 1;
-    if(previous === null)
+    if (previous === null)
     {
       current_index = 1;
     }
     else
     {
-      current_index = parseInt(previous.value.split('-')[1])+1;
+      current_index = parseInt(previous.value.split('-')[1]) + 1;
     }
-    
-    if(isNaN(current_index))
+
+    if (isNaN(current_index))
     {
       showWLS(1);
     }
@@ -675,7 +702,7 @@ function applyFilter()
   var taxa = document.getElementById('taxa');
   var concepts = document.getElementById('concepts');
   var entries = document.getElementById('columns');
-  
+
   var trows = [];
   var crows = [];
   var erows = [];
@@ -684,124 +711,124 @@ function applyFilter()
   var clist = concepts.value.split(/,\s*/);
   var elist = entries.value.toUpperCase().split(/,\s*/);
 
-  if(tlist[0] == '')
+  if (tlist[0] == '')
   {
     tlist = Object.keys(WLS['taxa']);
   }
-  if(clist[0] == '')
+  if (clist[0] == '')
   {
     clist = Object.keys(WLS['concepts']);
   }
-  if(elist[0] == '')
+  if (elist[0] == '')
   {
     elist = [];
   }
 
-  for(i in tlist)
+  for (i in tlist)
   {
-    if(tlist[i] != "")
+    if (tlist[i] != '')
     {
-      trows.push.apply(trows,WLS['taxa'][tlist[i]]);
+      trows.push.apply(trows, WLS['taxa'][tlist[i]]);
     }
   }
-  for(i in clist)
+  for (i in clist)
   {
-    if(clist[i] != "")
+    if (clist[i] != '')
     {
-      crows.push.apply(crows,WLS['concepts'][clist[i]]);
+      crows.push.apply(crows, WLS['concepts'][clist[i]]);
     }
   }
 
   /* check for the filtering of columns now */
-  if(elist[0] == '*')
+  if (elist[0] == '*')
   {
     entries.value = '';
-    for(i in WLS['header'])
+    for (i in WLS['header'])
     {
       head = WLS['header'][i];
       WLS['columns'][head] = Math.abs(WLS['columns'][head]);
-      document.getElementById('cb_'+head).checked = true;
-      if(BASICS.indexOf(head) == -1)
+      document.getElementById('cb_' + head).checked = true;
+      if (BASICS.indexOf(head) == -1)
       {
-        entries.value += head+', ';
+        entries.value += head + ', ';
       }
     }
   }
   else
   {
-    for(i in WLS['header'])
+    for (i in WLS['header'])
     {
       var head = WLS['header'][i];
-      if(elist.indexOf(head) != -1)
+      if (elist.indexOf(head) != -1)
       {
-        if(BASICS.indexOf(head) != -1)
+        if (BASICS.indexOf(head) != -1)
         {
           WLS['columns'][head] = -Math.abs(WLS['columns'][head]);
-          document.getElementById('cb_'+head).checked = false;
+          document.getElementById('cb_' + head).checked = false;
         }
         else
         {
           WLS['columns'][head] = Math.abs(WLS['columns'][head]);
-          document.getElementById('cb_'+head).checked = true;
+          document.getElementById('cb_' + head).checked = true;
         }
       }
       else
       {
-        if(BASICS.indexOf(head) == -1)
+        if (BASICS.indexOf(head) == -1)
         {
           WLS['columns'][head] = -Math.abs(WLS['columns'][head]);
-          document.getElementById('cb_'+head).checked = false;
+          document.getElementById('cb_' + head).checked = false;
         }
         else
         {
           WLS['columns'][head] = Math.abs(WLS['columns'][head]);
-          document.getElementById('cb_'+head).checked = true;
+          document.getElementById('cb_' + head).checked = true;
         }
       }
     }
   }
 
   /* sort both lists */
-  trows.sort(function(x,y){return x-y});
-  crows.sort(function(x,y){return x-y});
+  trows.sort(function(x, y) {return x - y});
+  crows.sort(function(x, y) {return x - y});
 
   /* function taken from http://stackoverflow.com/questions/1885557/simplest-code-for-array-intersection-in-javascript */
   function intersection_destructive(a, b)
   {
     var result = new Array();
-    while( a.length > 0 && b.length > 0 )
-    {  
-       if      (a[0] < b[0] ){ a.shift(); }
-       else if (a[0] > b[0] ){ b.shift(); }
+    while (a.length > 0 && b.length > 0)
+    {
+       if (a[0] < b[0]) { a.shift(); }
+       else if (a[0] > b[0]) { b.shift(); }
        else /* they're equal */
        {
          result.push(a.shift());
          b.shift();
        }
     }
-  
+
     return result;
   }
-  rows = intersection_destructive(trows,crows);
-  
-  WLS['rows'] = rows.sort(function(x,y){return x-y;});
+  rows = intersection_destructive(trows, crows);
+
+  WLS['rows'] = rows.sort(function(x, y) {return x - y;});
 }
 
 /* filter the columns in the data */
 function filterColumns(column)
 {
-  
+
   var columns = document.getElementById('columns');
-  
-  if(columns.value.indexOf(column) != -1)
+
+  if (columns.value.indexOf(column) != -1)
   {
-    columns.value = columns.value.replace(column+', ','');
+    columns.value = columns.value.replace(column + ', ', '');
   }
   else
   {
-    columns.value += column+', ';
+    columns.value += column + ', ';
   }
-  
+
   //columns.value += column.value+', ';
   applyFilter();
   showCurrent();
@@ -812,13 +839,13 @@ function getCurrent()
 {
   var previous = document.getElementById('previous');
   var current_index = 1;
-  if(previous === null)
+  if (previous === null)
   {
     current_index = 1;
   }
   else
   {
-    current_index = parseInt(previous.value.split('-')[1])+1;
+    current_index = parseInt(previous.value.split('-')[1]) + 1;
   }
   return current_index;
 }
@@ -827,16 +854,16 @@ function showCurrent()
 {
   var previous = document.getElementById('previous');
   var current_index = 1;
-  if(previous === null)
+  if (previous === null)
   {
     current_index = 1;
   }
   else
   {
-    current_index = parseInt(previous.value.split('-')[1])+1;
+    current_index = parseInt(previous.value.split('-')[1]) + 1;
   }
-  
-  if(isNaN(current_index))
+
+  if (isNaN(current_index))
   {
     showWLS(1);
   }
@@ -848,7 +875,7 @@ function showCurrent()
 
 /* file-handler function from http://www.html5rocks.com/de/tutorials/file/dndfiles/ */
 function handleFileSelect(evt) 
-{  
+{
   var files = evt.target.files; /* FileList object */
   var file = files[0];
   //var store = document.getElementById('store');
@@ -856,60 +883,60 @@ function handleFileSelect(evt)
   localStorage.filename = file.name;
 
   /* create file reader instance */
-  var reader = new FileReader({async:false});
+  var reader = new FileReader({async: false});
   //$.get('harry.msa', function(data){document.getElementById('store').innerText = data}, alert("loaded text"), 'text');
-  reader.onload = function(e){STORE = reader.result;}
+  reader.onload = function(e) {STORE = reader.result;};
   reader.readAsText(file);
 
   var modify = ['view'];
-  for(i in modify)
+  for (i in modify)
   {
     tmp = document.getElementById(modify[i]);
     tmp.style.display = 'block';
   }
-  var modify = ["concepts","columns","taxa","add_column","previous","next","current",'save'];
-  for(i in modify)
+  var modify = ['concepts', 'columns', 'taxa', 'add_column', 'previous', 'next', 'current', 'save'];
+  for (i in modify)
   {
-    $("#"+modify[i]).removeClass("active");
-    $("#"+modify[i]).addClass("inactive");
+    $('#' + modify[i]).removeClass('active');
+    $('#' + modify[i]).addClass('inactive');
   }
-  document.getElementById("qlc").innerHTML = '';
+  document.getElementById('qlc').innerHTML = '';
 
   var fn = document.getElementById('filename');
-  fn.innerHTML = '&lt;'+CFG['filename']+'&gt;';
+  fn.innerHTML = '&lt;' + CFG['filename'] + '&gt;';
   var dropZone = document.getElementById('drop_zone');
-  dropZone.style.display = "none";
+  dropZone.style.display = 'none';
 }
 
 function refreshFile()
 {
   //var store = document.getElementById('store');
-  var text = "# WORDLIST\n";
-  text += "@modified: "+getDate()+'\n#\n';
-  text += "ID\t"+WLS['header'].join('\t')+'\n';
-  for(concept in WLS['concepts'])
+  var text = '# WORDLIST\n';
+  text += '@modified: ' + getDate() + '\n#\n';
+  text += 'ID\t' + WLS['header'].join('\t') + '\n';
+  for (concept in WLS['concepts'])
   {
     text += '#\n';
-    for(i in WLS['concepts'][concept])
+    for (i in WLS['concepts'][concept])
     {
       var idx = WLS['concepts'][concept][i];
 
-      if(!isNaN(idx))
+      if (!isNaN(idx))
       {
-        text += idx+'\t'+WLS[idx].join('\t')+'\n';
+        text += idx + '\t' + WLS[idx].join('\t') + '\n';
       }
     }
   }
   //store.innerText = text;
   STORE = text;
   WLS['edited'] = true;
-  //localStorage.text = text;
+  localStorage.text = text;
   localStorage.filename = CFG['filename'];
 
-  $("#undo").removeClass('active');
-  $("#undo").addClass('inactive');
-  $("#redo").removeClass('active');
-  $("#redo").addClass('inactive');
+  $('#undo').removeClass('active');
+  $('#undo').addClass('inactive');
+  $('#redo').removeClass('active');
+  $('#redo').addClass('inactive');
   undoManager.clear();
   showWLS(getCurrent());
 }
@@ -917,45 +944,45 @@ function refreshFile()
 function fakeAlert(text)
 {
   var falert = document.createElement('div');
-  falert.id = "fake";
-  falert.innerHTML = '<p>'+text+'</p>';
-  falert.innerHTML += '<div id="fake" onclick="'+"$('#fake').remove();"+'")> OK </div>'; 
+  falert.id = 'fake';
+  falert.innerHTML = '<p>' + text + '</p>';
+  falert.innerHTML += '<div id="fake" onclick="' + "$('#fake').remove();" + '")> OK </div>';
   falert.className = 'fake_alert';
-  
+
   document.body.appendChild(falert);
 }
 function saveFile()
 {
   /* disallow safing when document was not edited */
-  if(!WLS['edited'])
+  if (!WLS['edited'])
   {
-    fakeAlert("You need to store the document before you can save it.");
+    fakeAlert('You need to store the document before you can save it.');
     return;
   }
-  
+
   //var store = document.getElementById('store');
-  var blob = new Blob([STORE], {type: "text/plain;charset=utf-8"});
-  saveAs(blob, CFG['filename']);  
+  var blob = new Blob([STORE], {type: 'text/plain;charset=utf-8'});
+  saveAs(blob, CFG['filename']);
 }
 
 function getDate()
 {
   var today = new Date();
   var dd = today.getDate();
-  var mm = today.getMonth()+1; //January is 0!
+  var mm = today.getMonth() + 1; //January is 0!
   var yyyy = today.getFullYear();
   var hh = today.getHours();
   var mins = today.getMinutes();
-  
-  if(dd<10) {
-      dd='0'+dd
-  } 
-  
-  if(mm<10) {
-      mm='0'+mm
-  } 
-  
-  today = [yyyy,mm,dd].join('-')+' '+hh+':'+mins;
+
+  if (dd < 10) {
+      dd = '0' + dd;
+  }
+
+  if (mm < 10) {
+      mm = '0' + mm;
+  }
+
+  today = [yyyy, mm, dd].join('-') + ' ' + hh + ':' + mins;
   return today;
 }
 
@@ -963,9 +990,9 @@ function getDate()
 function highLight()
 {
 	var tokens = document.getElementsByClassName('TOKENS');
-	for(var i=0;i<tokens.length;i++)
+	for (var i = 0; i < tokens.length; i++)
 	{
-		if(tokens[i].innerHTML == tokens[i].dataset.value)
+		if (tokens[i].innerHTML == tokens[i].dataset.value)
 		{
 			var word = plotWord(tokens[i].dataset.value);
 			tokens[i].innerText = tokens[i].dataset.value;
@@ -973,9 +1000,9 @@ function highLight()
 		}
 	}
 	var tokens = document.getElementsByClassName('PROTO_TOKENS');
-	for(var i=0;i<tokens.length;i++)
+	for (var i = 0; i < tokens.length; i++)
 	{
-		if(tokens[i].innerHTML == tokens[i].dataset.value)
+		if (tokens[i].innerHTML == tokens[i].dataset.value)
 		{
 			var word = plotWord(tokens[i].dataset.value);
 			tokens[i].innerText = tokens[i].dataset.value;
@@ -987,7 +1014,7 @@ function highLight()
 function toggleSettings()
 {
   var settings = document.getElementById('settingswitcher');
-  if(settings.value == 'HIDE SETTINGS')
+  if (settings.value == 'HIDE SETTINGS')
   {
     settings.value = 'SHOW SETTINGS';
     $('#settings').removeClass('active');
@@ -1011,4 +1038,4 @@ function toggleHelp()
 
 window.onload = function() {
     undoManager = new UndoManager();
-}
+};

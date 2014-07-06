@@ -121,6 +121,7 @@
 }
 
 .settings{
+  z-index: 1;
   overflow: hidden;
   float:right;
   background-color: #fefefe;

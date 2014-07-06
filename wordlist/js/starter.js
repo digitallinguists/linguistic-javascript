@@ -16,13 +16,14 @@ function startWordlist()
     if(typeof localStorage.text == 'undefined'){}
     else
     {
-      document.getElementById('store').innerText = localStorage.text;
+      STORE = localStorage.text;
       $("#last").removeClass("inactive");
       $("#last").addClass("active");
       var last = document.getElementById('last');
       last.value = "VIEW "+"<"+localStorage.filename+">";
       document.getElementById('filename').innerHTML = '<'+localStorage.filename+'>';
       CFG['filename'] = localStorage.filename;
+
     }
     return 1;
   }
@@ -203,5 +204,5 @@ dropZone.addEventListener('drop', handleFileSelect2, false);
 dropZone.style.backgroundColor = "#2e5ca8";
 
 
-
+$('#qlc').draggable({axis:"x"});
 $('#settings').draggable();
