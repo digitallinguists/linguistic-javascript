@@ -34,20 +34,21 @@ function startWordlist()
 }
 
 startWordlist();
-document.onkeyup = function(event)
-{
-  if(event.keyCode == 9)
+function basickeydown (event) {
+  /* CTRL + I */
+  if(event.keyCode == 73 && event.ctrlKey)
   {
+    event.preventDefault();
     var ids = document.getElementsByClassName('ID')[0];
-    var idx = parseInt(ids.title.split(' ')[1]);
+    var idx = parseInt(ids.innerHTML);
     editEntry(idx,1,0,0);
     return;
   }
-}
-document.onkeydown = function (event) {
+
   /* page down key code */
-  if(event.keyCode == 34)
+  else if(event.keyCode == 34)
   {
+    event.preventDefault();
     var next = document.getElementById('next').value;
     var idx = parseInt(next.split('-')[0]);
     showWLS(idx);
@@ -55,6 +56,7 @@ document.onkeydown = function (event) {
   /* page up key code */
   else if(event.keyCode == 33)
   {
+    event.preventDefault();
     var previous = document.getElementById('previous').value;
     var idx = parseInt(previous.split('-')[0]);
     showWLS(idx);
@@ -62,6 +64,7 @@ document.onkeydown = function (event) {
   /* toggle columns F4 */
   else if(event.keyCode == 115)
   {
+    event.preventDefault();
     var cols = document.getElementById('columns');
     if(cols.value != '')
     {
@@ -77,6 +80,7 @@ document.onkeydown = function (event) {
   /* toggle settings F2 */
   else if(event.keyCode == 113)
   {
+    event.preventDefault();
     toggleSettings();
   }
   /* toggle help F1 */
@@ -88,17 +92,36 @@ document.onkeydown = function (event) {
   /* ctrl z goes back */
   else if(event.keyCode == 90 && event.ctrlKey)
   {
+    event.preventDefault();
     UnDo();
   }
   /* ctrl y goes front */
   else if(event.keyCode == 89 && event.ctrlKey)
   {
+    event.preventDefault();
     ReDo();
   }
   /* save page */
+  else if(event.keyCode == 69 && event.ctrlKey)
+  {
+    event.preventDefault();
+    saveFile();
+  }
+  /* CTRL + S */
+  else if(event.keyCode == 83 && event.ctrlKey)
+  {
+    event.preventDefault();
+    refreshFile();
+  }
+  /* CTRL + E */
+  else if(event.keyCode == 82 && event.ctrlKey)
+  {
+    window.location.reload();
+  }
   return;
 }
 
+document.onkeydown = function(event){basickeydown(event);};
 
 function UnDo()
 {

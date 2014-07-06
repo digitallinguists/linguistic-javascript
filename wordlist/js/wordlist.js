@@ -3,7 +3,7 @@
  * author   : Johann-Mattis List
  * email    : mattis.list@lingulist.de
  * created  : 2014-06-28 09:48
- * modified : 2014-06-28 09:48
+ * modified : 2014-07-06 12:27
  *
  */
 
@@ -140,7 +140,6 @@ function csvToArrays(allText, separator, comment) {
   }
   all_columns.innerHTML = tmp_text + '</td>';
   all_columns.style.display = 'table-row';
-
 }
 
 function showWLS(start)
@@ -280,7 +279,8 @@ function showWLS(start)
   var fn = document.getElementById('filename');
   fn.innerHTML = '&lt;' + CFG['filename'] + '&gt;';
   highLight();
-
+  
+  //document.location.hash = 'qlc';
   return 1;
 }
 
@@ -389,13 +389,26 @@ function editEntry(idx, jdx, from_idx, from_jdx)
   {
     var ridx = WLS['rows'].indexOf(idx);
     var fidx = WLS['rows'].indexOf(from_idx);
-
-    if(ridx == -1 || fidx == -1)
+    //fakeAlert(fidx+' '+ridx);
+    if(ridx == -1 && fidx == -1)
     {
-      fakeAlert("Error with the IDs, cannot find the correct indices.");
+      fakeAlert("Error with the IDs, cannot find the correct indices for "+ridx+" and "+fidx);
       return;
     }
-    if (ridx > fidx)
+    else if (ridx == -1 && fidx == 0)
+    {
+      var wlsidx = WLS['rows'].length - CFG['preview'] - 1;
+      showWLS(wlsidx);
+      editEntry(WLS['rows'][(WLS['rows'].length-1)],jdx,0,0);
+      return;
+    }
+    else if (ridx == -1 && fidx == WLS['rows'].length-1)
+    {
+      showWLS(1);
+      editEntry(WLS['rows'][0],jdx,0,0);
+      return;
+    }
+    else if (ridx > fidx)
     {
       var next = document.getElementById('next');
       if(typeof next != 'undefined')
@@ -913,7 +926,16 @@ function refreshFile()
   //var store = document.getElementById('store');
   var text = '# WORDLIST\n';
   text += '@modified: ' + getDate() + '\n#\n';
-  text += 'ID\t' + WLS['header'].join('\t') + '\n';
+  //text += 'ID\t' + WLS['header'].join('\t') + '\n';
+  text += 'ID';
+  for(var i=0,head;head=WLS['header'][i];i++)
+  {
+    if(WLS['columns'][head] > 0)
+    {
+      text += '\t'+head;
+    }
+  }
+  text += '\n';
   for (concept in WLS['concepts'])
   {
     text += '#\n';
@@ -923,7 +945,16 @@ function refreshFile()
 
       if (!isNaN(idx))
       {
-        text += idx + '\t' + WLS[idx].join('\t') + '\n';
+        //text += idx + '\t' + WLS[idx].join('\t') + '\n';
+	text += idx;
+	for(var j=0,head;head=WLS['header'][j];j++)
+	{
+	  if(WLS['columns'][head] > 0)
+	  {
+	    text += '\t'+WLS[idx][j];
+	  }
+	}
+	text += '\n';
       }
     }
   }
@@ -939,24 +970,28 @@ function refreshFile()
   $('#redo').addClass('inactive');
   undoManager.clear();
   showWLS(getCurrent());
+  fakeAlert("Document was saved in local storage and can now be exported. Note that only those columns which are currently displayed will be written to file. If You want to select different columns for export, check out the current settings of column display by pressing F2, alter them accordingly, and SAVE the document again."); 
 }
 
 function fakeAlert(text)
 {
   var falert = document.createElement('div');
   falert.id = 'fake';
-  falert.innerHTML = '<p>' + text + '</p>';
-  falert.innerHTML += '<div id="fake" onclick="' + "$('#fake').remove();" + '")> OK </div>';
+  var text = '<div class="message"><p>' + text + '</p>';
+  text += '<div class="okbutton" onclick="' + "$('#fake').remove(); document.onkeydown = function(event){basickeydown(event)};" + '")> OK </div></div>';
   falert.className = 'fake_alert';
 
   document.body.appendChild(falert);
+  falert.innerHTML = text;
+  document.onkeydown = function(event){$('#fake').remove(); document.onkeydown = function(event){basickeydown(event);};};
+
 }
 function saveFile()
 {
   /* disallow safing when document was not edited */
   if (!WLS['edited'])
   {
-    fakeAlert('You need to store the document before you can save it.');
+    fakeAlert('You need to SAVE (press button or CTRL+S) the document before you can EXPORT it.');
     return;
   }
 
