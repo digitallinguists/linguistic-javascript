@@ -3,7 +3,7 @@
  * author   : Johann-Mattis List
  * email    : mattis.list@lingulist.de
  * created  : 2014-06-28 09:48
- * modified : 2014-07-06 12:27
+ * modified : 2014-07-07 13:27
  *
  */
 
@@ -22,7 +22,7 @@ var BASICS = [
   ];
 
 var WLS = {};
-var CFG = {'preview': 10};
+var CFG = {'preview': 10,'nodi': false};
 var STORE = ''; // global variable to store the text data in raw format
 
 /* load qlc-file */
@@ -39,6 +39,7 @@ function csvToArrays(allText, separator, comment) {
   var count = 1;
 
   var firstLineFound = false;
+  var noid = false;
   for (var i = 0; i < allTextLines.length; i++)
   {
     var data = allTextLines[i].split(separator);
@@ -84,12 +85,58 @@ function csvToArrays(allText, separator, comment) {
       BASICS.push(data[cIdx].toUpperCase());
 
     }
+/* handle cases where no ID has been submitted */
+    else if(firstLineFound == false)
+    {
+      firstLineFound = true;
+      noid = true;
+      CFG['noid'] = true;
+
+      /* get the header */
+      var header = [];
+      for (j = 0; j < data.length; j++)
+      {
+        var datum = data[j].toUpperCase();
+        header.push(datum);
+        if (['TAXA', 'TAXON', 'LANGUAGE', 'DOCULECT'].indexOf(datum) != -1)
+        {
+          tIdx = j;
+        }
+        if (datum == 'GLOSS' || datum == 'CONCEPT')
+        {
+          cIdx = j;
+        }
+	columns[datum] = j+1;
+      }
+      /* apply check for tidx and cidx */
+      if (tIdx == -1 && cIdx == -1) {tIdx = 0;cIdx = 1;}
+      else if (cIdx == -1 && tIdx > 1) {cIdx = 0; }
+      else if (cIdx == -1 && tIdx <= 1) {cIdx = 1; }
+      else if (tIdx == -1 && cIdx > 1) {tIdx = 2; }
+      else if (tIdx == -1 && cIdx <= 1) {tIdx = 1; }
+
+      /* append to basics */
+      columns[data[tIdx].toUpperCase()] = Math.abs(columns[data[tIdx].toUpperCase()]);
+      columns[data[cIdx].toUpperCase()] = Math.abs(columns[data[cIdx].toUpperCase()]);
+      BASICS.push(data[tIdx].toUpperCase());
+      BASICS.push(data[cIdx].toUpperCase());
+
+
+    }
     //else if (data[0].charAt(0) == comment || data[0] == '') {}
     else if (firstLineFound)
     {
-      var idx = parseInt(data[0]);
-
-      qlc[idx] = data.slice(1, data.length);
+      if(!noid)
+      {
+	var idx = parseInt(data[0]);
+	qlc[idx] = data.slice(1, data.length);
+      }
+      else
+      {
+	var idx = count;
+	count += 1;
+	qlc[idx] = data.slice(0,data.length);
+      }
 
       /* check for header */
       var taxon = data[tIdx];
@@ -938,7 +985,10 @@ function refreshFile()
   text += '\n';
   for (concept in WLS['concepts'])
   {
-    text += '#\n';
+    if(CFG['noid'] == false)
+    {
+      text += '#\n';
+    }
     for (i in WLS['concepts'][concept])
     {
       var idx = WLS['concepts'][concept][i];
