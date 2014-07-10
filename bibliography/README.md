@@ -21,3 +21,7 @@ decreasing order)
 * #/:bibentry shows a detailed view of a bibliography entry including a cite 
 and BibTeX representation of the entry
 
+TODOs:
+
+* write a better cite representation of entries (for different citation styles)
+* write representation functions for the entries depending on their views
