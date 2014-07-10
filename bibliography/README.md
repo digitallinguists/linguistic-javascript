@@ -13,13 +13,16 @@ General goal is to create some JS package that is similar in power with bibtex i
 
 A bibliography interface in JavaScript using Angular.js, parse-bibtex.js
 and Bootstrap. It features two main views (list and detail view) with 
-search and sort functionalities.
+search and sort functionalities. 
 
 * #/ shows a list of all entries in tabular format. Clicking on the column
 headers sorts the table according to the respective column (in increasing and
 decreasing order)
 * #/:bibentry shows a detailed view of a bibliography entry including a cite 
 and BibTeX representation of the entry
+
+The bibtex file can be specified in the app.js file. The current configuration
+uses the basic.bib file in the parent folder.
 
 TODOs:
 
