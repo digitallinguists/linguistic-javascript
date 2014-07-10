@@ -1,0 +1,26 @@
+    <form>
+      <label>Search entries: </label>
+      <input type="text" ng-model="search">
+      <!--<p ng-show="search">Du suchst gerade nach: {{search}}</p>-->
+    </form>
+
+    <table class="table table-hover">
+      <thead>
+      <tr>
+        <th><a href="" ng-click="sortField = 'YEAR'; reverse = !reverse">Year</a></th>
+        <th><a href="" ng-click="sortField = 'AUTHOR'; reverse = !reverse">Author</a></th>
+        <th><a href="" ng-click="sortField = 'TITLE'; reverse = !reverse">Title</a></th>
+        <th><a href="" ng-click="sortField = 'JOURNAL'; reverse = !reverse">Journal</a></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="article in articles | filter:search | orderBy:sortField:reverse">
+        <td>{{article.YEAR}}</td>
+        <td>{{article.AUTHOR}}</td>
+        <td>{{article.TITLE}}</td>
+        <td>{{article.JOURNAL}}</td>
+        <td><a href='#/{{article.bibkey}}' role="button" class="btn btn-primary btn-sm">show</a></td>
+      </tr>
+    </tbody>
+    </table>
