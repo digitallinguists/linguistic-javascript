@@ -83,6 +83,10 @@ return {
 bibApp.controller('ArticlesCtrl', function ($scope, articles){
 
     $scope.reverse = true;
+    $scope.totalDisplayed = 20;
+    $scope.loadMore = function () {
+      $scope.totalDisplayed += 20;  
+    };
     articles.list(function(articles) {
       $scope.articles = articles;
     });
