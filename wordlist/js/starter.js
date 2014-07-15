@@ -46,7 +46,7 @@ function toggleDiv(divid)
   }
 }
 
-startWordlist();
+
 function basickeydown (event) {
   /* CTRL + I */
   if(event.keyCode == 73 && event.ctrlKey)
@@ -233,4 +233,5 @@ dropZone.style.backgroundColor = "#2e5ca8";
 $('#qlc').draggable({axis:"x"});
 $('#settings').draggable();
 
-
+startWordlist();
+document.getElementById('onload').style.display = "none";
