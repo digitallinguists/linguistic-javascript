@@ -26,7 +26,7 @@ var CFG = {'preview': 10,'nodi': false};
 var STORE = ''; // global variable to store the text data in raw format
 
 /* load qlc-file */
-function csvToArrays(allText, separator, comment) {
+function csvToArrays(allText, separator, comment, keyval) {
   var allTextLines = allText.split(/\r\n|\n/);
 
   var qlc = {};
@@ -43,7 +43,7 @@ function csvToArrays(allText, separator, comment) {
   for (var i = 0; i < allTextLines.length; i++)
   {
     var data = allTextLines[i].split(separator);
-    if (data[0].charAt(0) == comment || data[0].replace(/\s*/g,'') == ''){}
+    if (data[0].charAt(0) == comment || data[0].replace(/\s*/g,'') == '' || data[0].charAt(0) == keyval){}
     else if (data[0] == 'ID')
     {
       firstLineFound = true;
@@ -106,7 +106,7 @@ function csvToArrays(allText, separator, comment) {
         {
           cIdx = j;
         }
-	columns[datum] = j+1;
+	      columns[datum] = j+1;
       }
       /* apply check for tidx and cidx */
       if (tIdx == -1 && cIdx == -1) {tIdx = 0;cIdx = 1;}
@@ -128,14 +128,14 @@ function csvToArrays(allText, separator, comment) {
     {
       if(!noid)
       {
-	var idx = parseInt(data[0]);
-	qlc[idx] = data.slice(1, data.length);
+	      var idx = parseInt(data[0]);
+	      qlc[idx] = data.slice(1, data.length);
       }
       else
       {
-	var idx = count;
-	count += 1;
-	qlc[idx] = data.slice(0,data.length);
+	      var idx = count;
+	      count += 1;
+	      qlc[idx] = data.slice(0,data.length);
       }
 
       /* check for header */
@@ -195,7 +195,7 @@ function showWLS(start)
   {
     //var store = document.getElementById('store');
 
-    csvToArrays(STORE, '\t', '#');
+    csvToArrays(STORE, '\t', '#', '@');
   }
 
   var text = '<table id="qlc_table">';
