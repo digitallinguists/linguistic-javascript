@@ -46,7 +46,7 @@ function getData(callback){
       if(cachedData) {
         callback(cachedData);
       } else {
-        $http.get('../basic.bib').success(function(data){
+        $http.get('basic.bib').success(function(data){
           //cachedData = data;
           b = new BibtexParser();
             b.setInput(data);
