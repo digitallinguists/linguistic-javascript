@@ -82,7 +82,19 @@
 .active {
   display: inline;
 }
-
+.submit3 {
+  margin-left: 5px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-right: 5px;
+  padding-left: 5px;
+  cursor: pointer;
+  color:white;
+  font-weight:bold;
+  background-color: #2e5ca8;
+  border: none;
+  float: right;
+}
 .submit {
   padding-top: 5px;
   padding-bottom: 5px;
@@ -118,8 +130,10 @@
 
 .textfield {
   cursor: text;
+  margin-top: 5px;
 }
 
+#settings{display: none;}
 .settings{
   z-index: 1;
   overflow: hidden;

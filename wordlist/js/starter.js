@@ -33,6 +33,19 @@ function startWordlist()
   }
 }
 
+function toggleDiv(divid)
+{
+  var divo = document.getElementById(divid);
+  if(divo.style.display != 'none')
+  {
+    divo.style.display = 'none';
+  }
+  else
+  {
+    divo.style.display = 'block';
+  }
+}
+
 startWordlist();
 function basickeydown (event) {
   /* CTRL + I */
@@ -81,7 +94,7 @@ function basickeydown (event) {
   else if(event.keyCode == 113)
   {
     event.preventDefault();
-    toggleSettings();
+    toggleDiv('settings');
   }
   /* toggle help F1 */
   else if(event.keyCode == 112)
@@ -229,3 +242,5 @@ dropZone.style.backgroundColor = "#2e5ca8";
 
 $('#qlc').draggable({axis:"x"});
 $('#settings').draggable();
+
+
