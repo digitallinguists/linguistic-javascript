@@ -1,4 +1,4 @@
-
+reload = false;
 
 
 /* http://www.phpied.com/sleep-in-javascript/ */
@@ -33,8 +33,8 @@ function startWordlist()
       last.value = "VIEW "+"<"+localStorage.filename+">";
       document.getElementById('filename').innerHTML = '<'+localStorage.filename+'>';
       CFG['filename'] = localStorage.filename;
-
     }
+    $('#fake').remove();
     return 1;
   }
   catch (e)
