@@ -15,6 +15,7 @@ function startWordlist()
 {
   try
   {
+    fakeAlert("Welcome to the Wordlist Editor. Press F1 or the HELP button if you want to learn more about its basic fun ctions.")
     document.getElementById('file').addEventListener('change', handleFileSelect, false);
     // Setup the dnd listeners.
     var dropZone = document.getElementById('drop_zone');
