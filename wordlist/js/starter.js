@@ -206,18 +206,8 @@ function handleFileSelect2(evt)
   reader.onload = function(e){STORE = reader.result;}
   reader.readAsText(file);
 
-  var modify = ['view'];
-  for(i in modify)
-  {
-    tmp = document.getElementById(modify[i]);
-    tmp.style.display = 'block';
-  }
-  var modify = ["concepts","columns","taxa","add_column","previous","next","current",'save'];
-  for(i in modify)
-  {
-    $("#"+modify[i]).removeClass("active");
-    $("#"+modify[i]).addClass("inactive");
-  }
+  document.getElementById('mainsettings').style.display = 'inline';
+  document.getElementById('view').style.display = 'block';
   document.getElementById("qlc").innerHTML = '';
 
   var fn = document.getElementById('filename');

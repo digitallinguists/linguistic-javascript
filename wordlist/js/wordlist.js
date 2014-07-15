@@ -306,22 +306,9 @@ function showWLS(start)
   current.innerHTML = 'Showing ' + start + ' - ' + following + ' of ' + parseInt(WLS['rows'].length) + ' entries';
   current.className = current.className.replace(/inactive/, 'active');
 
-  var modify = ['taxa', 'concepts', 'columns', 'add_column'];
-  for (i in modify)
-  {
-    tmp = document.getElementById(modify[i]);
-    tmp.className = tmp.className.replace(/inactive/, 'active');
-  }
-
   document.getElementById('view').style.display = 'none';
-  toggleDiv('mainsettings');
+  document.getElementById('mainsettings').style.display = 'inline';
   
-  //$('#settingswitcher').removeClass('inactive');
-  //$('#settingswitcher').addClass('active');
-  //$('#save').removeClass('inactive');
-  //$('#save').addClass('active');
-  //$('#refresh').removeClass('inactive');
-  //$('#refresh').addClass('active');
   document.getElementById('filedisplay').style.display = 'block';
   document.getElementById('drop_zone').style.display = 'none';
   var fn = document.getElementById('filename');
@@ -715,7 +702,7 @@ function filterWordlist(event,value)
 
     //var vals = value.split(/\s*=\s*/);
     var c = vals[0];
-    var v = vals[1].toLowerCase().replace(/\n/);
+    var v = vals[1].toLowerCase().replace(/\n/,'');
     var new_rows = [];
     var idx = WLS['header'].indexOf(c.toUpperCase());
     if(typeof idx != 'undefined')
@@ -727,15 +714,15 @@ function filterWordlist(event,value)
         {
           new_rows.push(r);
         }
-	else if(val == v && mode == 'equal')
-	{
-	  new_rows.push(r);
-	}
+	      else if(val == v && mode == 'equal')
+	      {
+	      new_rows.push(r);
+	      }
       }
       if(new_rows.length > 0)
       {
-	WLS['rows'] = new_rows;
-	showWLS(1);
+	      WLS['rows'] = new_rows;
+	      showWLS(1);
       }
     }
   }
