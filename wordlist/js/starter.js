@@ -1,9 +1,4 @@
-fakeAlert("Welcome to the Wordlist Editor. Press ANY button to continue.");
-// Setup the dnd listeners.
-var dropZone = document.getElementById('drop_zone');
-dropZone.addEventListener('dragover', handleDragOver, false);
-dropZone.addEventListener('drop', handleFileSelect2, false);
-dropZone.style.backgroundColor = "#2e5ca8";
+
 
 
 /* http://www.phpied.com/sleep-in-javascript/ */
@@ -21,6 +16,12 @@ function startWordlist()
   try
   {
     document.getElementById('file').addEventListener('change', handleFileSelect, false);
+    // Setup the dnd listeners.
+    var dropZone = document.getElementById('drop_zone');
+    dropZone.addEventListener('dragover', handleDragOver, false);
+    dropZone.addEventListener('drop', handleFileSelect2, false);
+    dropZone.style.backgroundColor = "#2e5ca8";
+
     if(typeof localStorage.text == 'undefined'){}
     else
     {
