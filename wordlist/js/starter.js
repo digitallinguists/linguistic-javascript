@@ -1,3 +1,4 @@
+fakeAlert("Welcome to the Wordlist Editor. Press ANY button to continue.");
 // Setup the dnd listeners.
 var dropZone = document.getElementById('drop_zone');
 dropZone.addEventListener('dragover', handleDragOver, false);
@@ -236,4 +237,3 @@ $('#qlc').draggable({axis:"x"});
 $('#settings').draggable();
 
 startWordlist();
-fakeAlert("The Wordlist Editor is now fully loaded. Press ANY button to continue.");
