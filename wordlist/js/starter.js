@@ -236,4 +236,4 @@ $('#qlc').draggable({axis:"x"});
 $('#settings').draggable();
 
 startWordlist();
-document.getElementById('onload').style.display = "none";
+fakeAlert("The Wordlist Editor is now fully loaded. Press ANY button to continue.");
