@@ -244,6 +244,15 @@ span.dolgo_GAP{background-color: #bbbbbb;}
   width: 100%;
 }
 
+.drop_zone_start {
+    margin-top: 10px;
+    border: 2px dotted white;
+    padding: 25px;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    background-color: Crimson;
+  }
 #drop_zone {
     margin-top: 10px;
     border: 2px dotted white;
