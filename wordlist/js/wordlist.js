@@ -26,7 +26,7 @@ var CFG = {'preview': 10,'nodi': false};
 var STORE = ''; // global variable to store the text data in raw format
 
 /* load qlc-file */
-function csvToArrays(allText, separator, comment) {
+function csvToArrays(allText, separator, comment, keyval) {
   var allTextLines = allText.split(/\r\n|\n/);
 
   var qlc = {};
@@ -43,7 +43,7 @@ function csvToArrays(allText, separator, comment) {
   for (var i = 0; i < allTextLines.length; i++)
   {
     var data = allTextLines[i].split(separator);
-    if (data[0].charAt(0) == comment || data[0].replace(/\s*/g,'') == ''){}
+    if (data[0].charAt(0) == comment || data[0].replace(/\s*/g,'') == '' || data[0].charAt(0) == keyval){}
     else if (data[0] == 'ID')
     {
       firstLineFound = true;
@@ -106,7 +106,7 @@ function csvToArrays(allText, separator, comment) {
         {
           cIdx = j;
         }
-	columns[datum] = j+1;
+	      columns[datum] = j+1;
       }
       /* apply check for tidx and cidx */
       if (tIdx == -1 && cIdx == -1) {tIdx = 0;cIdx = 1;}
@@ -128,14 +128,14 @@ function csvToArrays(allText, separator, comment) {
     {
       if(!noid)
       {
-	var idx = parseInt(data[0]);
-	qlc[idx] = data.slice(1, data.length);
+	      var idx = parseInt(data[0]);
+	      qlc[idx] = data.slice(1, data.length);
       }
       else
       {
-	var idx = count;
-	count += 1;
-	qlc[idx] = data.slice(0,data.length);
+	      var idx = count;
+	      count += 1;
+	      qlc[idx] = data.slice(0,data.length);
       }
 
       /* check for header */
@@ -195,7 +195,7 @@ function showWLS(start)
   {
     //var store = document.getElementById('store');
 
-    csvToArrays(STORE, '\t', '#');
+    csvToArrays(STORE, '\t', '#', '@');
   }
 
   var text = '<table id="qlc_table">';
@@ -306,21 +306,9 @@ function showWLS(start)
   current.innerHTML = 'Showing ' + start + ' - ' + following + ' of ' + parseInt(WLS['rows'].length) + ' entries';
   current.className = current.className.replace(/inactive/, 'active');
 
-  var modify = ['taxa', 'concepts', 'columns', 'add_column'];
-  for (i in modify)
-  {
-    tmp = document.getElementById(modify[i]);
-    tmp.className = tmp.className.replace(/inactive/, 'active');
-  }
-
   document.getElementById('view').style.display = 'none';
-
-  $('#settingswitcher').removeClass('inactive');
-  $('#settingswitcher').addClass('active');
-  $('#save').removeClass('inactive');
-  $('#save').addClass('active');
-  $('#refresh').removeClass('inactive');
-  $('#refresh').addClass('active');
+  document.getElementById('mainsettings').style.display = 'inline';
+  
   document.getElementById('filedisplay').style.display = 'block';
   document.getElementById('drop_zone').style.display = 'none';
   var fn = document.getElementById('filename');
@@ -681,6 +669,68 @@ function unmodifyEntry(idx, jdx, xvalue)
   highLight();
 }
 
+function filterWordlist(event,value)
+{
+  if(typeof WLS['_prows'] == 'undefined')
+  {
+    WLS['_prows'] = WLS['rows'];
+  }
+  else
+  {
+    WLS['rows'] = WLS['_prows'];
+  }
+  if(value == '')
+  {
+    WLS['rows'] = WLS['_prows'];
+    showWLS(1);
+    return;
+  }
+
+  if(event.keyCode == 13)
+  {
+    if(value.indexOf('==') != -1)
+    {
+      var mode = 'equal';
+      var vals = value.split(/\s*==\s*/);
+    }
+    else if(value.indexOf('=') != -1)
+    {
+      var mode = 'like';
+      var vals = value.split(/\s*=\s/);
+    }
+    else{return;}
+
+    //var vals = value.split(/\s*=\s*/);
+    var c = vals[0];
+    var v = vals[1].toLowerCase().replace(/\n/,'');
+    var new_rows = [];
+    var idx = WLS['header'].indexOf(c.toUpperCase());
+    if(typeof idx != 'undefined')
+    {
+      for(var i=0,r;r=WLS['rows'][i];i++)
+      {
+        var val = WLS[r][idx].toLowerCase();
+        if(val.indexOf(v) != -1 && mode == 'like')
+        {
+          new_rows.push(r);
+        }
+	      else if(val == v && mode == 'equal')
+	      {
+	      new_rows.push(r);
+	      }
+      }
+      if(new_rows.length > 0)
+      {
+	      WLS['rows'] = new_rows;
+	      showWLS(1);
+      }
+    }
+  }
+  else
+  {
+    return;
+  }
+}
 
 function filterWLS(event, type)
 {
@@ -954,7 +1004,7 @@ function handleFileSelect(evt)
     tmp = document.getElementById(modify[i]);
     tmp.style.display = 'block';
   }
-  var modify = ['concepts', 'columns', 'taxa', 'add_column', 'previous', 'next', 'current', 'save'];
+  var modify = ['concepts', 'columns', 'taxa', 'add_column', 'previous', 'next', 'current',];
   for (i in modify)
   {
     $('#' + modify[i]).removeClass('active');
@@ -1120,6 +1170,22 @@ function toggleHelp()
   $('#help').toggle('active');
 
 }
+
+function toggleDiv(divid)
+{
+  var divo = document.getElementById(divid);
+  if(divo.style.display != 'none')
+  {
+    divo.style.display = 'none';
+  }
+  else
+  {
+    divo.style.display = 'block';
+  }
+}
+
+
+
 
 window.onload = function() {
     undoManager = new UndoManager();

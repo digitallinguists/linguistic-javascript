@@ -1,3 +1,6 @@
+reload = false;
+
+
 /* http://www.phpied.com/sleep-in-javascript/ */
 function sleep(milliseconds) {
   var start = new Date().getTime();
@@ -13,6 +16,12 @@ function startWordlist()
   try
   {
     document.getElementById('file').addEventListener('change', handleFileSelect, false);
+    // Setup the dnd listeners.
+    var dropZone = document.getElementById('drop_zone');
+    dropZone.addEventListener('dragover', handleDragOver, false);
+    dropZone.addEventListener('drop', handleFileSelect2, false);
+    dropZone.style.backgroundColor = "#2e5ca8";
+
     if(typeof localStorage.text == 'undefined'){}
     else
     {
@@ -23,8 +32,8 @@ function startWordlist()
       last.value = "VIEW "+"<"+localStorage.filename+">";
       document.getElementById('filename').innerHTML = '<'+localStorage.filename+'>';
       CFG['filename'] = localStorage.filename;
-
     }
+    $('#eingang').remove();
     return 1;
   }
   catch (e)
@@ -33,7 +42,20 @@ function startWordlist()
   }
 }
 
-startWordlist();
+function toggleDiv(divid)
+{
+  var divo = document.getElementById(divid);
+  if(divo.style.display != 'none')
+  {
+    divo.style.display = 'none';
+  }
+  else
+  {
+    divo.style.display = 'block';
+  }
+}
+
+
 function basickeydown (event) {
   /* CTRL + I */
   if(event.keyCode == 73 && event.ctrlKey)
@@ -81,7 +103,7 @@ function basickeydown (event) {
   else if(event.keyCode == 113)
   {
     event.preventDefault();
-    toggleSettings();
+    toggleDiv('settings');
   }
   /* toggle help F1 */
   else if(event.keyCode == 112)
@@ -193,18 +215,8 @@ function handleFileSelect2(evt)
   reader.onload = function(e){STORE = reader.result;}
   reader.readAsText(file);
 
-  var modify = ['view'];
-  for(i in modify)
-  {
-    tmp = document.getElementById(modify[i]);
-    tmp.style.display = 'block';
-  }
-  var modify = ["concepts","columns","taxa","add_column","previous","next","current",'save'];
-  for(i in modify)
-  {
-    $("#"+modify[i]).removeClass("active");
-    $("#"+modify[i]).addClass("inactive");
-  }
+  document.getElementById('mainsettings').style.display = 'inline';
+  document.getElementById('view').style.display = 'block';
   document.getElementById("qlc").innerHTML = '';
 
   var fn = document.getElementById('filename');
@@ -220,12 +232,9 @@ function handleDragOver(evt) {
   evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
 }
 
-// Setup the dnd listeners.
-var dropZone = document.getElementById('drop_zone');
-dropZone.addEventListener('dragover', handleDragOver, false);
-dropZone.addEventListener('drop', handleFileSelect2, false);
-dropZone.style.backgroundColor = "#2e5ca8";
 
 
 $('#qlc').draggable({axis:"x"});
 $('#settings').draggable();
+
+startWordlist();

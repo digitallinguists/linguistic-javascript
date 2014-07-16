@@ -8,6 +8,8 @@
   padding: 5px;
   white-space: nowrap;
   text-overflow: ellipsis;
+  cursor: -webkit-grabbing; 
+  cursor: -moz-grabbing;
 }
 @media screen and (max-width: 600px) {
   #qlc_table th{
@@ -20,6 +22,8 @@
     overflow: auto;
     text-overflow: ellipsis;
     padding 3px;
+    cursor: -webkit-grabbing; 
+    cursor: -moz-grabbing;
   }
   #qlc_table td{
     text-align: left;
@@ -45,6 +49,8 @@
     overflow: auto;
     text-overflow: ellipsis;
     padding 3px;
+    cursor: -webkit-grabbing; 
+    cursor: -moz-grabbing;
   }
   #qlc_table td{
     text-align: left;
@@ -83,6 +89,20 @@
   display: inline;
 }
 
+.submit3 {
+  margin-left: 5px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-right: 5px;
+  padding-left: 5px;
+  cursor: pointer;
+  color:white;
+  font-weight:bold;
+  background-color: #2e5ca8;
+  border: none;
+  float: right;
+  //display: inline;
+}
 .submit {
   padding-top: 5px;
   padding-bottom: 5px;
@@ -118,8 +138,15 @@
 
 .textfield {
   cursor: text;
+  margin-top: 5px;
+  display: inline;
+}
+#textfields {
+  display: none;
 }
 
+
+#settings{display: none;}
 .settings{
   z-index: 1;
   overflow: hidden;
@@ -131,6 +158,7 @@
   border: 1px solid #2e5ca8;
   text-align:left;
   padding:5px;
+  cursor: -webkit-grabbing; cursor: -moz-grabbing;
 }
 .settings td{
   border: 1px solid #2e5ca8;
@@ -216,6 +244,15 @@ span.dolgo_GAP{background-color: #bbbbbb;}
   width: 100%;
 }
 
+.drop_zone_start {
+    margin-top: 10px;
+    border: 2px dotted white;
+    padding: 25px;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    background-color: Crimson;
+  }
 #drop_zone {
     margin-top: 10px;
     border: 2px dotted white;
@@ -310,4 +347,12 @@ span.dolgo_GAP{background-color: #bbbbbb;}
   padding-right: 5px;
   padding-left: 5px;
   cursor: pointer;
+}
+
+#mainsettings {
+  display: none;
+  float: right;
+}
+#undoredo {
+  margin-top: 5px;
 }
