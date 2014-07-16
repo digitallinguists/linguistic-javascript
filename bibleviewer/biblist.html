@@ -1,0 +1,26 @@
+    <form>
+      <label>Search verse IDs or words: </label>&nbsp;
+      <input type="text" ng-model="search">
+      <!--<p ng-show="search">Du suchst gerade nach: {{search}}</p>-->
+    </form>
+
+    <table class="table table-hover">
+      <thead>
+      <tr>
+        <th>ID</th>
+        <th>Verse text</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="verse in verses | filter:search | limitTo:totalDisplayed">
+        <td>{{verse.ID}}</td>
+        <td>{{verse.TEXT}}</td>
+        <td><a href='#/{{verse.ID}}' role="button" class="btn btn-primary btn-sm">show</a></td>
+      </tr>
+    </tbody>
+    </table>
+
+    <div style="margin-bottom: 20px;">
+      <button class="btn btn-primary" ng-click="loadMore()">Load more ...</button> 
+    </div>
