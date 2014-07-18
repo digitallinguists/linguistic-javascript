@@ -15,7 +15,11 @@
       </tr>
     </thead>
     <tbody>
-      <tr ng-repeat="article in articles | filter:search | orderBy:sortField:reverse | limitTo:totalDisplayed">
+      <!--<tr ng-repeat="article in articles | filter:search | orderBy:sortField:reverse | limitTo:totalDisplayed">
+    -->
+      <tr dir-paginate="article in articles | filter:search | 
+        orderBy:sortField:reverse | itemsPerPage: pageSize" 
+        current-page="currentPage">
         <td>{{article.YEAR}}</td>
         <td>{{article.AUTHOR}}</td>
         <td>{{article.TITLE}}</td>
@@ -25,6 +29,10 @@
     </tbody>
     </table>
 
+<!--
     <div style="margin-bottom: 20px;">
       <button class="btn btn-primary" ng-click="loadMore()">Load more</button> 
     </div>
+-->
+
+    <dir-pagination-controls boundary-links="true"></dir-pagination-controls>
