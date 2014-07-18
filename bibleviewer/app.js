@@ -70,6 +70,8 @@ bibApp.controller('ArticlesCtrl', function ($scope, verses){
 
     $scope.reverse = true;
     $scope.totalDisplayed = 20;
+    $scope.currentPage = 1;
+    $scope.pageSize = 10;
 
     $scope.loadMore = function () {
       $scope.totalDisplayed += 20;  
@@ -86,3 +88,4 @@ bibApp.controller('ArticleCtrl', function ($scope, $routeParams, verses){
       console.log(verse);
     });
 });
+

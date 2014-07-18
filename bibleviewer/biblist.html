@@ -13,7 +13,8 @@
       </tr>
     </thead>
     <tbody>
-      <tr ng-repeat="verse in verses | filter:search | limitTo:totalDisplayed">
+      <!--<tr ng-repeat="verse in verses | filter:search | limitTo:totalDisplayed">-->
+      <tr dir-paginate="verse in verses | filter:search | itemsPerPage: pageSize" current-page="currentPage">
         <td>{{verse.ID}}</td>
         <td>{{verse.TEXT}}</td>
         <td><a href='#/{{verse.ID}}' role="button" class="btn btn-primary btn-sm">show</a></td>
@@ -21,6 +22,10 @@
     </tbody>
     </table>
 
+<!-- old loading module
     <div style="margin-bottom: 20px;">
       <button class="btn btn-primary" ng-click="loadMore()">Load more ...</button> 
     </div>
+-->
+
+    <dir-pagination-controls boundary-links="true"></dir-pagination-controls>
