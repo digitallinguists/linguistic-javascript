@@ -158,6 +158,7 @@ var fileManager = (function () {
             document.getElementById('edit').className = "submit active";
             document.getElementById('reload').className = "submit active";
             document.getElementById('save').className = "submit active";
+            document.getElementById('minimize').className = "submit active";
             if (active_idx === -1) {
                 elem.value = index;
                 elem.onchange(elem);
