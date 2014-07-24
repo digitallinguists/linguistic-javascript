@@ -7,9 +7,9 @@ var MSAFile = function() {
     this.dataset = undefined; //header entry
     this.alignment = undefined; //header entry
     this.lines = []; //parsed file: mix of comment lines and rows
+    this.annotations = []
     this.rows = []; //alignments
     this.unique_rows = [];
-    this.ans = []; //special rows as defined through keywords
     this.width = 0; //width of the alignment table without the taxon
     this.type = 'basic'; //or 'with_id'
     this.taxlen = 0; //max length of taxa
@@ -20,13 +20,16 @@ var MSAFile = function() {
                   mode: 'show'}; // or 'edit'
 }
 
+
 var MSARow = function() {
     this.id = undefined;
-    this.taxon = undefined;
+    this.row_header = undefined; //taxon
     this.alignment = []; //always modify in place to keep references valid
     this.unique = true; //if unique === true then alignment contains original data, else alignment is a
                         //shared reference to another row alignment
 }
+
+MSARow.prototype.empty_symbol = '-';
 
 MSARow.prototype.exportRow = function (msa_file) {
     var result = '';
@@ -34,15 +37,144 @@ MSARow.prototype.exportRow = function (msa_file) {
     if (msa_file.type == 'with_id') {
         row_start.push(this.id);
     }
-    row_start.push(this.fillTaxonWithDots(msa_file.taxlen));
+    row_start.push(this.fillWithDots(this.row_header, msa_file.taxlen));
     result += row_start.join('\t') + '\t' + this.alignment.join('\t') + '\n'
     return result;
 }
 
 // pad the taxon with dots to a specific length
-MSARow.prototype.fillTaxonWithDots = function (name, len) {
+MSARow.prototype.fillWithDots = function (name, len) {
     var dots = '.......................................';
-    return this.taxon + dots.substring(0, len - this.taxon.length);
+    return name + dots.substring(0, len - name.length);
+}
+
+MSARow.prototype.parseRow = function(parts) {
+    if (! isNaN(parts[0])) { //id as first row entry
+        this.id = parseInt(parts.shift());
+    }
+    
+    this.row_header = parts[0].replace(/\.*$/, '')
+    this.alignment = parts.slice(1).map(function(x){ 
+        x = x.trim();
+        return x === '' && this.empty_symbol || x;
+    });
+
+    return this.row_header;
+}
+
+MSARow.prototype.getDolgo = function(cell_entry) {
+    var dolgo = "dolgo_ERROR";
+    if (cell_entry in DOLGO) {
+        dolgo = "dolgo_" + DOLGO[cell_entry]
+    } else if (cell_entry.slice(0, 2) in DOLGO) {
+        dolgo = "dolgo_" + DOLGO[cell_entry.slice(0, 2)];
+    } else if (cell_entry.slice(0, 1) in DOLGO) {
+        dolgo = "dolgo_" + DOLGO[cell_entry.slice(0, 1)];
+    } else if (cell_entry.slice(1, 3) in DOLGO) {
+        dolgo = "dolgo_" + DOLGO[cell_entry.slice(1, 3)];
+    } else if (cell_entry.slice(1, 2) in DOLGO) {
+        dolgo = "dolgo_" + DOLGO[cell_entry.slice(1, 2)];
+    } else if (cell_entry == "-") {
+        dolgo = "dolgo_GAP";
+    }
+    return dolgo;
+}
+
+MSARow.prototype.syncRowToDom = function(table_row, tab_index) {
+    //sync cell count
+    while(this.alignment.length+1 > table_row.children.length) {
+        var table_data = document.createElement('TD');
+        table_data.classList.add('residue')
+        table_data.onmousedown = tableSelection.mousedownHandler;
+        table_data.ondblclick = tableSelection.openEditDialog;
+        table_data.appendChild(document.createTextNode(''));
+        table_row.appendChild(table_data);
+    }
+    while(this.alignment.length+1 < table_row.children.length) {
+        table_row.removeChild(table_row.lastChild);
+    }
+        
+    var textNode = table_row.children[0].childNodes[0];
+    if (textNode.nodeValue !== this.row_header) {
+        textNode.nodeValue = this.row_header;
+        table_row.children[0].classList = ['taxon'];
+    }
+    for (var col_idx = 0; col_idx < this.alignment.length; col_idx++) {
+        var cell = table_row.children[col_idx+1];
+        cell.tabIndex = tab_index++;
+        textNode = cell.childNodes[0];
+        if (textNode.nodeValue !== this.alignment[col_idx]) {
+            textNode.nodeValue = this.alignment[col_idx];
+            //update dolgo css
+            cell.className = cell.className.replace(/(?:^|\s)dolgo_[^\s]*(?!\S)/g , '' );
+            cell.classList.add(this.getDolgo(this.alignment[col_idx]));
+        }
+    }
+    return tab_index;
+}
+
+
+var AnnotationRow = function () {
+    this.row_header = undefined;
+    this.alignment = [];
+}
+
+AnnotationRow.prototype.empty_symbol = '.';
+
+AnnotationRow.prototype.fillWithDots = MSARow.prototype.fillWithDots;
+
+AnnotationRow.prototype.exportRow = function(msa_file) {
+    return ':ANN\t' + this.fillWithDots(this.row_header, msa_file.taxlen) + '\t' + this.alignment.join('\t') + '\n';
+}
+
+AnnotationRow.prototype.parseRow = function(parts) {
+    this.row_header = parts[1].replace(/\.*$/, '')
+    this.alignment = parts.slice(2).map(function(x){ 
+        x = x.trim();
+        return x === '' && this.empty_symbol || x;
+    });
+
+    return this.row_header;
+}
+
+AnnotationRow.prototype.getDolgo = function(cell_entry) {
+    return '';
+}
+
+AnnotationRow.prototype.syncRowToDom = function(table_row, tab_index) {
+    //sync cell count
+    while(this.alignment.length+1 > table_row.children.length) {
+        var table_data = document.createElement('TD');
+        table_data.classList.add('residue')
+        table_data.onmousedown = tableSelection.mousedownHandler;
+        table_data.ondblclick = tableSelection.openEditDialog;
+        table_data.appendChild(document.createTextNode(''));
+        table_row.appendChild(table_data);
+    }
+    while(this.alignment.length+1 < table_row.children.length) {
+        table_row.removeChild(table_row.lastChild);
+    }
+    
+    var textNode = table_row.children[0].childNodes[0];
+    if (textNode.nodeValue !== this.row_header) {
+        textNode.nodeValue = this.row_header;
+        table_row.children[0].classList = ['taxon'];
+    }
+    for (var col_idx = 0; col_idx < this.alignment.length; col_idx++) {
+        var cell = table_row.children[col_idx+1];
+        cell.tabIndex = tab_index++;
+        textNode = cell.childNodes[0];
+        if (textNode.nodeValue !== this.alignment[col_idx]) {
+            textNode.nodeValue = this.alignment[col_idx];
+            //update dolgo css
+            cell.className = cell.className.replace(/(?:^|\s)dolgo_[^\s]*(?!\S)/g , '' );
+            var css_cls = this.getDolgo(this.alignment[col_idx]);
+            if (css_cls !== '') {
+                cell.classList.add(css_cls);
+            }
+        }
+    }
+    return tab_index;
 }
 
 
@@ -69,7 +201,7 @@ var fileManager = (function () {
         */
         for(var i=0; i<msa_file.lines.length; i++) {
             var line = msa_file.lines[i];
-            if (line instanceof MSARow) {
+            if (line instanceof MSARow || line instanceof AnnotationRow) {
                 data += line.exportRow(msa_file);
             }
             else {
@@ -214,7 +346,7 @@ function parseMSA(msa_file) {
     for (var i = 0; i < lines.length; i++) {
         var line = lines[i].trim();
         var start = line[0];
-        if (start === '#' || start === ':') {
+        if (start === '#') {
             msa_file.lines.push(line + '\n');
             continue;
         }
@@ -226,7 +358,7 @@ function parseMSA(msa_file) {
             msa_file.meta_information.key = val;
         } else {
             var parts = line.split('\t');
-            if (parts.length === 1) {
+            if (parts.length === 1) { // special row? maybe first or second row
                 if (i === 0) {
                     msa_file.dataset = line
                 } else if ( i === 1 ) {
@@ -235,33 +367,27 @@ function parseMSA(msa_file) {
                 msa_file.lines.push(line + '\n');
                 continue;
             }
-            var row = new MSARow();
+            var row;
+            if ( start === ':' && line.substring(0,4) === ':ANN' ) {
+                row = new AnnotationRow();
+                msa_file.annotations.push(row);
+            } else {
+                row = new MSARow();
+                msa_file.rows.push(row);
+                if (! isNaN(parts[0])) {
+                    msa_file.type = 'with_id';
+                }
+            }
             msa_file.lines.push(row);
-            if (! isNaN(parts[0])) { //id as first row entry
-                row.id = parseInt(parts.shift());
-                msa_file.type = 'with_id';
-            }
-            
-            var row_header = parts[0].replace(/\.*$/, '')
-            row.taxon = row_header;
-            row.alignment = parts.slice(1).map(function(x){ 
-                x = x.trim();
-                return x === '' && '-' || x;
-            });
 
-            if (row_header in keywords) {
-                msa_file.ans.push(row);
-                continue;
-            }
-            msa_file.rows.push(row);
+            var row_header = row.parseRow(parts);
             msa_file.taxlen = Math.max(msa_file.taxlen, row_header.length);
             msa_file.width = Math.max(msa_file.width, row.alignment.length);
-
         }
     }
 
-    msa_file.rows.sort(function(a,b) { return a.taxon.localeCompare(b.taxon); });
-
+    msa_file.rows.sort(function(a,b) { return a.row_header.localeCompare(b.row_header); });
+            
     //search duplicates
     var seen = {};
     for (var i = 0; i < msa_file.rows.length; i++) {
@@ -275,27 +401,14 @@ function parseMSA(msa_file) {
             seen[word] = row.alignment;
         }
     }
+            
+    var splice_args = [0,0];
+    Array.prototype.push.apply(splice_args, msa_file.annotations);
+    Array.prototype.splice.apply(msa_file.rows, splice_args);
+    Array.prototype.splice.apply(msa_file.unique_rows, splice_args);
 
     normalizeMsa(msa_file, 'right');
     msa_file.status.parsed = true;
-}
-
-function GetDolgo(phon) {
-    var dolgo = "dolgo_ERROR";
-    if (phon in DOLGO) {
-        dolgo = "dolgo_" + DOLGO[phon]
-    } else if (phon.slice(0, 2) in DOLGO) {
-        dolgo = "dolgo_" + DOLGO[phon.slice(0, 2)];
-    } else if (phon.slice(0, 1) in DOLGO) {
-        dolgo = "dolgo_" + DOLGO[phon.slice(0, 1)];
-    } else if (phon.slice(1, 3) in DOLGO) {
-        dolgo = "dolgo_" + DOLGO[phon.slice(1, 3)];
-    } else if (phon.slice(1, 2) in DOLGO) {
-        dolgo = "dolgo_" + DOLGO[phon.slice(1, 2)];
-    } else if (phon == "-") {
-        dolgo = "dolgo_GAP";
-    }
-    return dolgo;
 }
 
 //has to be called to propagate updates of the msa_file during edit to the DOM
@@ -326,39 +439,7 @@ function syncMsaToDom(msa_file) {
     //sync rows
     var tab_index = 1;
     for(var row_idx=0; row_idx < rows.length; row_idx++) {
-        var row = rows[row_idx]
-        var alignment = row.alignment;
-        var table_row = tbody.children[row_idx]
-        
-        //sync cell count
-        while(alignment.length+1 > table_row.children.length) {
-            var table_data = document.createElement('TD');
-            table_data.classList.add('residue')
-            table_data.onmousedown = tableSelection.mousedownHandler;
-            table_data.ondblclick = tableSelection.openEditDialog;
-            table_data.appendChild(document.createTextNode(''));
-            table_row.appendChild(table_data);
-        }
-        while(alignment.length+1 < table_row.children.length) {
-            table_row.removeChild(table_row.lastChild);
-        }
-        
-        var textNode = table_row.children[0].childNodes[0];
-        if (textNode.nodeValue !== row.taxon) {
-            textNode.nodeValue = row.taxon;
-            table_row.children[0].classList = ['taxon'];
-        }
-        for (var col_idx = 0; col_idx < alignment.length; col_idx++) {
-            var cell = table_row.children[col_idx+1];
-            cell.tabIndex = tab_index++;
-            textNode = cell.childNodes[0];
-            if (textNode.nodeValue !== alignment[col_idx]) {
-                textNode.nodeValue = alignment[col_idx];
-                //update dolgo css
-                cell.className = cell.className.replace(/(?:^|\s)dolgo_[^\s]*(?!\S)/g , '' );
-                cell.classList.add(GetDolgo(alignment[col_idx]));
-            }
-        }
+        tab_index = rows[row_idx].syncRowToDom(tbody.children[row_idx], tab_index);
     }
 }
 
@@ -401,10 +482,10 @@ function showMSA(msa_file, edit_mode) {
     for (var row_idx = 0; row_idx < rows.length; row_idx++) {
         var row = rows[row_idx];
         var alignment = row.alignment;
-        text += '<tr class="alm_row"><td class="taxon">' + row.taxon + '</td>';
+        text += '<tr class="alm_row"><td class="taxon">' + row.row_header + '</td>';
         for (var col_idx = 0; col_idx < alignment.length; col_idx++) {
             var cell = alignment[col_idx];
-            var dolgo = GetDolgo(cell);
+            var dolgo = row.getDolgo(cell);
             var tab_definition;
             if (edit_mode) {
                 tab_definition = '" tabindex=' + tabindex;
@@ -417,26 +498,6 @@ function showMSA(msa_file, edit_mode) {
         text += '</tr>';
     }
     msa_body.innerHTML = text;
-
-    var msa_foot = document.getElementById('msa_annotation');
-    text = '<tr><td colspan="' + (msa_file.width + 1) + '"></td></tr>';
-
-    for (var row_idx=0; row_idx < msa_file.ans.length; row_idx++) {
-        var row = msa_file.ans[row_idx]
-        text += '<tr class="annotation_row">';
-        text += '<td class="annotation_type">' + row.taxon + '</td>';
-
-        for (var col_idx=0; col_idx < row.alignment.length; col_idx++) {
-            var cell = row.alignment[col_idx]
-            if (cell !== '.') {
-                text += '<td class="annotation">' + cell + '</td>';
-            } else {
-                text += '<td class="annotation"></td>';
-            }
-        }
-        text += '</tr>';
-    }
-    msa_foot.innerHTML = text;
 
     $(document).off('keydown'); 
     if (msa_file.status.mode === 'edit') {
@@ -599,6 +660,8 @@ var tableSelection = (function () {
                 fileManager.saveFiles();
             } else if (event.keyCode === 77) { //m inimize
                 executeOperation(removeGapColumnsForActive);
+            } else if (event.keyCode === 69) { //e dit cell
+                tableSelection.openEditDialog(event);
             } else if (event.keyCode === 13) {
                 if (event.shiftKey) {
                     if (event.ctrlKey || event.metaKey) {
@@ -811,19 +874,22 @@ function splitSelectionAndFill(msa_file, selection, filling_from) {
 function mergeSelectionAndFill(msa_file, selection, filling_from) {
     var rows = msa_file.unique_rows;
     var fill_position = (filling_from == 'left' && selection.ul.x || selection.ul.x+1);
-    var filler_args = [fill_position, 0];
-    for (var i = selection.ul.x; i < selection.lr.x; i++) {
-        filler_args.push('-');
-    }
 
     for (var y = selection.ul.y; y <= selection.lr.y; y++) {
+        var row = rows[y];
         var repl = '';
+
+        var filler_args = [fill_position, 0];
+        for (var i = selection.ul.x; i < selection.lr.x; i++) {
+            filler_args.push(row.empty_symbol);
+        }
+        
         for (var x = selection.ul.x; x <= selection.lr.x; x++) {
-            if (rows[y].alignment[x] != '-' && rows[y].alignment[x] != '?') {
+            if (rows[y].alignment[x] !== row.empty_symbol && rows[y].alignment[x] !== '?') {
                 repl += rows[y].alignment[x];
             }
         }
-        if (repl === '') repl = '-';
+        if (repl === '') repl = row.empty_symbol;
         rows[y].alignment.splice(selection.ul.x, selection.lr.x-selection.ul.x+1, repl);
         Array.prototype.splice.apply(rows[y].alignment, filler_args);
     }
@@ -843,14 +909,14 @@ function deleteSelectionAndFill(msa_file, selection, filling_from) {
 function moveSelectionLeft(msa_file, selection) {
     var rows = msa_file.unique_rows;
     for(run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
-            rows[run_y].alignment.splice(selection.lr.x + 1, 0, '-');
+            rows[run_y].alignment.splice(selection.lr.x + 1, 0, rows[run_y].empty_symbol);
     }
 
     var found_empty_col = false;
     column_loop:
     for (var run_x = selection.ul.x - 1; run_x >= 0; run_x--) {
         for (var run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
-            if (rows[run_y].alignment[run_x] !== '-') {
+            if (rows[run_y].alignment[run_x] !== rows[run_y].empty_symbol) {
                 continue column_loop;
             }
         }
@@ -872,14 +938,14 @@ function moveSelectionRight(msa_file, selection) {
     var rows = msa_file.unique_rows;
 
     for(run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
-        rows[run_y].alignment.splice(selection.ul.x, 0, '-');
+        rows[run_y].alignment.splice(selection.ul.x, 0, rows[run_y].empty_symbol);
     }
 
     var found_empty_col = false;
     column_loop:
     for (var run_x = selection.lr.x+2; run_x < msa_file.width + 1; run_x++) {
         for (var run_y = selection.ul.y; run_y <= selection.lr.y; run_y++) {
-            if (rows[run_y].alignment[run_x] !== '-') {
+            if (rows[run_y].alignment[run_x] !== rows[run_y].empty_symbol) {
                 continue column_loop;
             }
         }
@@ -911,9 +977,9 @@ function normalizeMsa(msa_file, filling_from){
         row = msa_file.unique_rows[i];
         while (row.alignment.length < max) {
             if (filling_from == 'right') {
-                row.alignment.push('-');
+                row.alignment.push(row.empty_symbol);
             } else {
-                row.alignment.splice(0,0,'-');
+                row.alignment.splice(0, 0, row.empty_symbol);
             }
         }
     }
@@ -933,7 +999,7 @@ function removeGapColumns(msa_file) {
         var only_gaps = true;
         for(i=0; i < msa_file.unique_rows.length; i++) {
             var row = msa_file.unique_rows[i];
-            if (row.alignment[x].trim() !== '-') {
+            if (row.alignment[x].trim() !== row.empty_symbol) {
                 only_gaps = false;
                 break
             }

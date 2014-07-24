@@ -1,26 +1,3 @@
-/* define keywords for general MSA format */
-var keywords = {
-  "LOCAL": "", 
-  "MERGE": "", 
-  "SWAPS": "", 
-  "ID": "",
-  "IGNORE":"",
-  "COLUMNID":"",
-  "COMPLEX":"",
-  "STANDARD":""
-};
-
-var params = ["view", "edit", "save", "refresh", "undo_button", "redo_button"];
-
-var privates = [
-  "width",
-  "uniques",
-  "sequences",
-  "mode",
-  "taxlen",
-  "type"
-  ];
-
 /* define the converter object for the coloring of the cols */
 var DOLGO = {
   "t\u035c\u0255": "K", 
